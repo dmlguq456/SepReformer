@@ -35,7 +35,7 @@ class Engine(object):
         self.start_epoch = util_engine.load_last_checkpoint_n_get_epoch(self.checkpoint_path, self.model, self.main_optimizer, location=self.device)
         self.wandb_run = wandb_run
         
-        # Logging        
+        # Logging 
         util_engine.model_params_mac_summary(
             model=self.model, 
             input=torch.randn(1, self.config['check_computations']['dummy_len']).to(self.device), 

@@ -45,7 +45,7 @@ class Masking(torch.nn.Module):
         return y
 
 
-class FFN(torch.nn.Module):
+class GCFN(torch.nn.Module):
     def __init__(self, in_channels, dropout_rate, Layer_scale_init=1.0e-5):
         super().__init__()
         self.net1 = torch.nn.Sequential(
@@ -65,7 +65,7 @@ class FFN(torch.nn.Module):
         y = self.depthwise(y)
         y = y.permute(0, 2, 1).contiguous()
         y = self.net2(y)
-        return x + y*self.Layer_scale
+        return x + self.Layer_scale(y)
 
 
 class MultiHeadAttention(torch.nn.Module):
@@ -123,17 +123,49 @@ class MultiHeadAttention(torch.nn.Module):
         p_attn = self.dropout(self.attn)
         x = torch.matmul(p_attn, v)  # (batch, head, time1, d_k)
         x = x.transpose(1, 2).contiguous().view(n_batch, -1, self.h * self.d_k)  # (batch, time1, d_model)
-        return self.dropout(self.linear_out(x))*self.Layer_scale  # (batch, time1, d_model)
+        return self.Layer_scale(self.dropout(self.linear_out(x)))  # (batch, time1, d_model)
+
+class EGA(torch.nn.Module):
+    def __init__(self, in_channels: int, num_mha_heads: int, dropout_rate: float):
+        super().__init__()
+        self.block = torch.nn.ModuleDict({
+            'self_attn': MultiHeadAttention(
+                n_head=num_mha_heads, in_channels=in_channels, dropout_rate=dropout_rate),
+            'linear': torch.nn.Sequential(
+                torch.nn.LayerNorm(normalized_shape=in_channels), 
+                torch.nn.Linear(in_features=in_channels, out_features=in_channels), 
+                torch.nn.Sigmoid())
+        })
+    
+    def forward(self, x: torch.Tensor, pos_k: torch.Tensor):
+        """
+        Compute encoded features.
+            :param torch.Tensor x: encoded source features (batch, max_time_in, size)
+            :param torch.Tensor mask: mask for x (batch, max_time_in)
+            :rtype: Tuple[torch.Tensor, torch.Tensor]
+        """
+        down_len = pos_k.shape[0]
+        x_down = torch.nn.functional.adaptive_avg_pool1d(input=x, output_size=down_len)
+        x = x.permute([0, 2, 1])
+        x_down = x_down.permute([0, 2, 1])
+        x_down = self.block['self_attn'](x_down, pos_k, None)
+        x_down = x_down.permute([0, 2, 1])
+        x_downup = torch.nn.functional.upsample(input=x_down, size=x.shape[1])
+        x_downup = x_downup.permute([0, 2, 1])
+        x = x + self.block['linear'](x) * x_downup
+
+        return x
 
 
-class ConvLocalSelfAttention(torch.nn.Module):
+
+class CLA(torch.nn.Module):
     def __init__(self, in_channels, num_heads, dropout_rate, Layer_scale_init=1.0e-5):
         super().__init__()
         self.num_heads = num_heads
         self.layer_norm = torch.nn.LayerNorm(in_channels)
         self.linear1 = torch.nn.Linear(in_channels, in_channels*2)
         self.GLU = torch.nn.GLU()
-        self.dw_conv_1d = torch.nn.Conv1d(in_channels, in_channels, 65, padding='same', groups=self.in_channels)
+        self.dw_conv_1d = torch.nn.Conv1d(in_channels, in_channels, 65, padding='same', groups=in_channels)
         self.linear2 = torch.nn.Linear(in_channels, 2*in_channels)        
         self.BN = torch.nn.BatchNorm1d(2*in_channels)
         self.linear3 = torch.nn.Sequential(
@@ -155,4 +187,69 @@ class ConvLocalSelfAttention(torch.nn.Module):
         y = y.permute(0, 2, 1) # B, T, 2F        
         y = self.linear3(y)
         
-        return x + y*self.Layer_scale
+        return x + self.Layer_scale(y)
+    
+class GlobalBlock(torch.nn.Module):
+    def __init__(self, in_channels: int, num_mha_heads: int, dropout_rate: float):
+        super().__init__()
+        self.block = torch.nn.ModuleDict({
+            'ega': EGA(
+                num_mha_heads=num_mha_heads, in_channels=in_channels, dropout_rate=dropout_rate),
+            'gcfn': GCFN(in_channels=in_channels, dropout_rate=dropout_rate)
+        })
+    
+    def forward(self, x: torch.Tensor, pos_k: torch.Tensor):
+        """
+        Compute encoded features.
+            :param torch.Tensor x: encoded source features (batch, max_time_in, size)
+            :param torch.Tensor mask: mask for x (batch, max_time_in)
+            :rtype: Tuple[torch.Tensor, torch.Tensor]
+        """
+        x = self.block['ega'](x, pos_k)
+        x = self.block['gcfn'](x)
+        x = x.permute([0, 2, 1])
+
+        return x
+
+
+class LocalBlock(torch.nn.Module):
+    def __init__(self, in_channels: int, num_clsa_heads: int, dropout_rate: float):
+        super().__init__()
+        self.block = torch.nn.ModuleDict({
+            'cla': CLA(in_channels, num_clsa_heads, dropout_rate),
+            'gcfn': GCFN(in_channels, dropout_rate)
+        })
+    
+    def forward(self, x: torch.Tensor):
+        x = self.block['cla'](x)
+        x = self.block['gcfn'](x)
+
+        return x
+    
+    
+class SpkAttention(torch.nn.Module):
+    def __init__(self, in_channels: int, num_mha_heads: int, dropout_rate: float):
+        super().__init__()
+        self.self_attn = MultiHeadAttention(n_head=num_mha_heads, in_channels=in_channels, dropout_rate=dropout_rate)
+        self.feed_forward = GCFN(in_channels=in_channels, dropout_rate=dropout_rate)
+    
+    def forward(self, x: torch.Tensor, num_spk: int):
+        """
+        Compute encoded features.
+            :param torch.Tensor x: encoded source features (batch, max_time_in, size)
+            :param torch.Tensor mask: mask for x (batch, max_time_in)
+            :rtype: Tuple[torch.Tensor, torch.Tensor]
+        """
+        B, F, T = x.shape
+        x = x.view(B//num_spk, num_spk, F, T).contiguous()
+        x = x.permute([0, 3, 1, 2]).contiguous()
+        x = x.view(-1, num_spk, F).contiguous()
+        x = x + self.self_attn(x, None, None)
+        x = x.view(B//num_spk, T, num_spk, F).contiguous()
+        x = x.permute([0, 2, 3, 1]).contiguous()
+        x = x.view(B, F, T).contiguous()
+        x = x.permute([0, 2, 1])
+        x = self.feed_forward(x)
+        x = x.permute([0, 2, 1])
+
+        return x

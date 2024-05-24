@@ -71,12 +71,10 @@ wandb:
                         embed_v: false
                     enc_stage:
                         global_blocks:
-                            num_blocks: 1
                             in_channels: *feature_projector_out_channels
                             num_mha_heads: 8
                             dropout_rate: 0.05
                         local_blocks:
-                            num_blocks: 1
                             in_channels: *feature_projector_out_channels
                             num_clsa_heads: 4
                             dropout_rate: 0.05
@@ -93,12 +91,10 @@ wandb:
                     dec_stage:
                         num_spks: *var_model_num_spks
                         global_blocks:
-                            num_blocks: 1
                             in_channels: *feature_projector_out_channels
                             num_mha_heads: 8
                             dropout_rate: 0.05
                         local_blocks:
-                            num_blocks: 1
                             in_channels: *feature_projector_out_channels
                             num_clsa_heads: 4
                             dropout_rate: 0.05

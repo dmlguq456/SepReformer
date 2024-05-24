@@ -59,61 +59,7 @@ class Separator(torch.nn.Module):
         class SepEncStage(torch.nn.Module):
             def __init__(self, global_blocks: dict, local_blocks: dict, down_conv_layer: dict, down_conv=True):
                 super().__init__()
-                
-                class EncGlobalBlocks(torch.nn.Module):
-                    def __init__(self, num_blocks: int, in_channels: int, num_mha_heads: int, dropout_rate: float):
-                        super().__init__()
-                        self.blocks = torch.nn.ModuleList()
-                        for _ in range(num_blocks):
-                            block = torch.nn.ModuleDict({
-                                'self_attn': MultiHeadAttention(
-                                    n_head=num_mha_heads, in_channels=in_channels, dropout_rate=dropout_rate),
-                                'linear': torch.nn.Sequential(
-                                    torch.nn.LayerNorm(normalized_shape=in_channels), 
-                                    torch.nn.Linear(in_features=in_channels, out_features=in_channels), 
-                                    torch.nn.Sigmoid()),
-                                'feed_forward': FFN(in_channels=in_channels, dropout_rate=dropout_rate)
-                            })
-                            self.blocks.append(block)
-                    
-                    def forward(self, x: torch.Tensor, pos_k: torch.Tensor):
-                        """
-                        Compute encoded features.
-                            :param torch.Tensor x: encoded source features (batch, max_time_in, size)
-                            :param torch.Tensor mask: mask for x (batch, max_time_in)
-                            :rtype: Tuple[torch.Tensor, torch.Tensor]
-                        """
-                        for block in self.blocks:
-                            down_len = pos_k.shape[0]
-                            x_down = torch.nn.functional.adaptive_avg_pool1d(input=x, output_size=down_len)
-                            x = x.permute([0, 2, 1])
-                            x_down = x_down.permute([0, 2, 1])
-                            x_down = block['self_attn'](x_down, pos_k, None)
-                            x_down = x_down.permute([0, 2, 1])
-                            x_downup = torch.nn.functional.upsample(input=x_down, size=x.shape[1])
-                            x_downup = x_downup.permute([0, 2, 1])
-                            x = x + block['linear'](x) * x_downup
-                            x = block['feed_forward'](x)
-                            x = x.permute([0, 2, 1])
-                        return x
-                
-                class EncLocalBlocks(torch.nn.Module):
-                    def __init__(self, num_blocks: int, in_channels: int, num_clsa_heads: int, dropout_rate: float):
-                        super().__init__()
-                        self.blocks = torch.nn.ModuleList()
-                        for _ in range(num_blocks):
-                            block = torch.nn.ModuleDict({
-                                'clsa': ConvLocalSelfAttention(in_channels, num_clsa_heads, dropout_rate),
-                                'ffn': FFN(in_channels, dropout_rate)
-                            })
-                            self.blocks.append(block)
-                    
-                    def forward(self, x: torch.Tensor):
-                        for block in self.blocks:
-                            x = block['clsa'](x)
-                            x = block['ffn'](x)
-                        return x
-                
+                                
                 class DownConvLayer(torch.nn.Module):
                     def __init__(self, in_channels: int, samp_kernel_size: int):
                         """Construct an EncoderLayer object."""
@@ -131,11 +77,11 @@ class Separator(torch.nn.Module):
                         x = x.permute([0, 2, 1])
                         return x
                 
-                self.g_block_1 = EncGlobalBlocks(**global_blocks)
-                self.l_block_1 = EncLocalBlocks(**local_blocks)
+                self.g_block_1 = GlobalBlock(**global_blocks)
+                self.l_block_1 = LocalBlock(**local_blocks)
                 
-                self.g_block_2 = EncGlobalBlocks(**global_blocks)
-                self.l_block_2 = EncLocalBlocks(**local_blocks)
+                self.g_block_2 = GlobalBlock(**global_blocks)
+                self.l_block_2 = LocalBlock(**local_blocks)
                 
                 self.downconv = DownConvLayer(**down_conv_layer) if down_conv == True else None
                 
@@ -182,98 +128,16 @@ class Separator(torch.nn.Module):
             def __init__(self, num_spks: int, global_blocks: dict, local_blocks: dict, spk_attention: dict):
                 super().__init__()
                 
-                class EncGlobalBlocks(torch.nn.Module):
-                    def __init__(self, num_blocks: int, in_channels: int, num_mha_heads: int, dropout_rate: float):
-                        super().__init__()
-                        print(in_channels)
-                        self.blocks = torch.nn.ModuleList()
-                        for _ in range(num_blocks):
-                            block = torch.nn.ModuleDict({
-                                'self_attn': MultiHeadAttention(
-                                    n_head=num_mha_heads, in_channels=in_channels, dropout_rate=dropout_rate),
-                                'linear': torch.nn.Sequential(
-                                    torch.nn.LayerNorm(normalized_shape=in_channels), 
-                                    torch.nn.Linear(in_features=in_channels, out_features=in_channels), 
-                                    torch.nn.Sigmoid()),
-                                'feed_forward': FFN(in_channels=in_channels, dropout_rate=dropout_rate)
-                            })
-                            self.blocks.append(block)
-                    
-                    def forward(self, x: torch.Tensor, pos_k: torch.Tensor):
-                        """
-                        Compute encoded features.
-                            :param torch.Tensor x: encoded source features (batch, max_time_in, size)
-                            :param torch.Tensor mask: mask for x (batch, max_time_in)
-                            :rtype: Tuple[torch.Tensor, torch.Tensor]
-                        """
-                        for block in self.blocks:
-                            down_len = pos_k.shape[0]
-                            x_down = torch.nn.functional.adaptive_avg_pool1d(input=x, output_size=down_len)
-                            x = x.permute([0, 2, 1])
-                            x_down = x_down.permute([0, 2, 1])
-                            x_down = block['self_attn'](x_down, pos_k, None)
-                            x_down = x_down.permute([0, 2, 1])
-                            x_downup = torch.nn.functional.upsample(input=x_down, size=x.shape[1])
-                            x_downup = x_downup.permute([0, 2, 1])
-                            x = x + block['linear'](x) * x_downup
-                            x = block['feed_forward'](x)
-                            x = x.permute([0, 2, 1])
-                        return x
-                
-                class EncLocalBlocks(torch.nn.Module):
-                    def __init__(self, num_blocks: int, in_channels: int, num_clsa_heads: int, dropout_rate: float):
-                        super().__init__()
-                        self.blocks = torch.nn.ModuleList()
-                        for _ in range(num_blocks):
-                            block = torch.nn.ModuleDict({
-                                'clsa': ConvLocalSelfAttention(in_channels, num_clsa_heads, dropout_rate),
-                                'ffn': FFN(in_channels, dropout_rate)
-                            })
-                            self.blocks.append(block)
-                    
-                    def forward(self, x: torch.Tensor):
-                        for block in self.blocks:
-                            x = block['clsa'](x)
-                            x = block['ffn'](x)
-                        return x
-                
-                class SpkAttention(torch.nn.Module):
-                    def __init__(self, in_channels: int, num_mha_heads: int, dropout_rate: float):
-                        super().__init__()
-                        self.self_attn = MultiHeadAttention(n_head=num_mha_heads, in_channels=in_channels, dropout_rate=dropout_rate)
-                        self.feed_forward = FFN(in_channels=in_channels, dropout_rate=dropout_rate)
-                    
-                    def forward(self, x: torch.Tensor, num_spk: int):
-                        """
-                        Compute encoded features.
-                            :param torch.Tensor x: encoded source features (batch, max_time_in, size)
-                            :param torch.Tensor mask: mask for x (batch, max_time_in)
-                            :rtype: Tuple[torch.Tensor, torch.Tensor]
-                        """
-                        B, F, T = x.shape
-                        x = x.view(B//num_spk, num_spk, F, T).contiguous()
-                        x = x.permute([0, 3, 1, 2]).contiguous()
-                        x = x.view(-1, num_spk, F).contiguous()
-                        x = x + self.self_attn(x, None, None)
-                        x = x.view(B//num_spk, T, num_spk, F).contiguous()
-                        x = x.permute([0, 2, 3, 1]).contiguous()
-                        x = x.view(B, F, T).contiguous()
-                        x = x.permute([0, 2, 1])
-                        x = self.feed_forward(x)
-                        x = x.permute([0, 2, 1])
-                        # GCFN
-                        return x
-                
-                self.g_block_1 = EncGlobalBlocks(**global_blocks)
-                self.l_block_1 = EncLocalBlocks(**local_blocks)
+                self.g_block_1 = GlobalBlock(**global_blocks)
+                self.l_block_1 = LocalBlock(**local_blocks)
                 self.spk_attn_1 = SpkAttention(**spk_attention)
                 
-                self.g_block_2 = EncGlobalBlocks(**global_blocks)
-                self.l_block_2 = EncLocalBlocks(**local_blocks)
+                self.g_block_2 = GlobalBlock(**global_blocks)
+                self.l_block_2 = LocalBlock(**local_blocks)
                 self.spk_attn_2 = SpkAttention(**spk_attention)
                 
-                self.g_block_3 = EncGlobalBlocks(**global_blocks)
-                self.l_block_3 = EncLocalBlocks(**local_blocks)
+                self.g_block_3 = GlobalBlock(**global_blocks)
+                self.l_block_3 = LocalBlock(**local_blocks)
                 self.spk_attn_3 = SpkAttention(**spk_attention)
                 
                 self.num_spk = num_spks

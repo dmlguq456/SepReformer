@@ -177,7 +177,7 @@ class PIT_SISNR_mag:
 
 @logger_wraps()
 @dataclass(slots=True)
-class PIT_SDR_time:
+class PIT_SISNR_time:
     device: torch.device
     num_spks: int
     scale_inv: bool

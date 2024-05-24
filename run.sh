@@ -1,3 +1,3 @@
 python3 run.py \
---model GLGLNet-wsj-base-e1d4-early-shared-is-mlo \
+--model SepReformer_Base_WSJ0 \
 --engine_mode train

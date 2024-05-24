@@ -21,7 +21,7 @@ from scipy.spatial.distance import cosine
 
 
 
-def load_latent_checkpoint_n_get_epoch(checkpoint_dir, model, optimizer, location):
+def load_last_checkpoint_n_get_epoch(checkpoint_dir, model, optimizer, location):
     """
     Load the latest checkpoint (model state and optimizer state) from a given directory.
 
