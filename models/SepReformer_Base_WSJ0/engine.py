@@ -17,6 +17,7 @@ class Engine(object):
         
         ''' Default setting '''
         self.engine_mode = args.engine_mode
+        self.out_wav_dir = args.out_wav_dir
         self.config = config
         self.gpuid = gpuid
         self.device = device
@@ -52,7 +53,7 @@ class Engine(object):
         tot_loss_freq = [0 for _ in range(self.model.num_stages)]
         tot_loss_time, num_batch = 0, 0
         pbar = tqdm(total=len(dataloader), unit='batches', bar_format='{l_bar}{bar:25}{r_bar}{bar:-10b}', colour="YELLOW", dynamic_ncols=True)
-        for input_sizes, mixture, src in dataloader:
+        for input_sizes, mixture, src, _ in dataloader:
             nnet_input = mixture
             nnet_input = functions.apply_cmvn(nnet_input) if self.config['engine']['mvn'] else nnet_input
             num_batch += 1
@@ -90,7 +91,7 @@ class Engine(object):
         tot_loss_time, num_batch = 0, 0
         pbar = tqdm(total=len(dataloader), unit='batches', bar_format='{l_bar}{bar:5}{r_bar}{bar:-10b}', colour="RED", dynamic_ncols=True)
         with torch.inference_mode():
-            for input_sizes, mixture, src in dataloader:
+            for input_sizes, mixture, src, _ in dataloader:
                 nnet_input = mixture
                 nnet_input = functions.apply_cmvn(nnet_input) if self.config['engine']['mvn'] else nnet_input
                 nnet_input = nnet_input.to(self.device)
@@ -113,28 +114,38 @@ class Engine(object):
     #TODO: CSV에 파일단위로 SDRi 기록 / 출력 결과 이름 받아서 저장되도록
     #TODO: .wav 저장 모드 따로 설정하기.
     @logger_wraps()
-    def _test(self, dataloader):
+    def _test(self, dataloader, wav_dir=None):
         self.model.eval()
         total_loss_SISNRi, total_loss_SDRi, num_batch = 0, 0, 0
         pbar = tqdm(total=len(dataloader), unit='batches', bar_format='{l_bar}{bar:5}{r_bar}{bar:-10b}', colour="grey", dynamic_ncols=True)
         with torch.inference_mode():
-            with open('test_utt_value_real.csv', 'w', newline='') as csvfile:
+            csv_file_name_sisnr = os.path.join(os.path.dirname(__file__),'test_SISNRi_value.csv')
+            csv_file_name_sdr = os.path.join(os.path.dirname(__file__),'test_SDRi_value.csv')
+            with open(csv_file_name_sisnr, 'w', newline='') as csvfile_sisnr, open(csv_file_name_sdr, 'w', newline='') as csvfile_sdr:
                 idx = 0
-                spamwriter = csv.writer(csvfile, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-                for input_sizes, mixture, src in dataloader:
+                writer_sisnr = csv.writer(csvfile_sisnr, quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                writer_sdr = csv.writer(csvfile_sdr, quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                for input_sizes, mixture, src, key in dataloader:
+                    if len(key) > 1:
+                        raise("batch size is not one!!")
                     nnet_input = mixture.to(self.device)
                     num_batch += 1
                     pbar.update(1)
                     estim_src, _ = torch.nn.parallel.data_parallel(self.model, nnet_input, device_ids=self.gpuid)
-                    cur_loss_SISNRi = self.PIT_SISNRi_loss(estims=estim_src, mixture=mixture, input_sizes=input_sizes, target_attr=src, eps=1.0e-15)
+                    cur_loss_SISNRi, cur_loss_SISNRi_src = self.PIT_SISNRi_loss(estims=estim_src, mixture=mixture, input_sizes=input_sizes, target_attr=src, eps=1.0e-15)
                     total_loss_SISNRi += cur_loss_SISNRi.item() / self.config['model']['num_spks']
-                    cur_loss_SDRi = self.PIT_SDRi_loss(estims=estim_src, mixture=mixture, input_sizes=input_sizes, target_attr=src)
+                    cur_loss_SDRi, cur_loss_SDRi_src = self.PIT_SDRi_loss(estims=estim_src, mixture=mixture, input_sizes=input_sizes, target_attr=src)
                     total_loss_SDRi += cur_loss_SDRi.item() / self.config['model']['num_spks']
-                    spamwriter.writerow(['utterance_' + str(idx), cur_loss_SDRi.item()/ self.config['model']['num_spks']])
+                    writer_sisnr.writerow([key[0][:-4]] + [cur_loss_SISNRi_src[i].item() for i in range(self.config['model']['num_spks'])])
+                    writer_sdr.writerow([key[0][:-4]] + [cur_loss_SDRi_src[i].item() for i in range(self.config['model']['num_spks'])])
                     if self.engine_mode == "test_wav":
+                        if wav_dir == None: wav_dir = os.path.join(os.path.dirname(__file__),"wav_out")
+                        if wav_dir and not os.path.exists(wav_dir): os.makedirs(wav_dir)
+                        mixture = torch.squeeze(mixture).cpu().data.numpy()
+                        sf.write(os.path.join(wav_dir,key[0][:-4]+str(idx)+'_mixture.wav'), 0.5*mixture/max(abs(mixture)), 8000)
                         for i in range(self.config['model']['num_spks']):
                             src = torch.squeeze(estim_src[i]).cpu().data.numpy()
-                            sf.write('utterance_'+str(idx)+'_'+str(i)+'.wav', 0.5*src/max(abs(src)), 8000)
+                            sf.write(os.path.join(wav_dir,key[0][:-4]+str(idx)+'_out_'+str(i)+'.wav'), 0.5*src/max(abs(src)), 8000)
                     idx += 1
                     dict_loss = {"SiSNRi": total_loss_SISNRi/num_batch, "SDRi": total_loss_SDRi/num_batch}
                     pbar.set_postfix(dict_loss)
@@ -148,7 +159,7 @@ class Engine(object):
             writer_src = SummaryWriter(os.path.join(os.path.dirname(os.path.abspath(__file__)), "log/tensorboard"))
             if "test" in self.engine_mode:
                 on_test_start = time.time()
-                test_loss_src_time_1, test_loss_src_time_2, test_num_batch = self._test(self.dataloaders['test'])
+                test_loss_src_time_1, test_loss_src_time_2, test_num_batch = self._test(self.dataloaders['test'], self.out_wav_dir)
                 on_test_end = time.time()
                 test_speed = (on_test_end - on_test_start) / test_num_batch
                 logger.info(f"[TEST] Loss(time/mini-batch) \n - Epoch {self.start_epoch:2d}: SISNRi = {test_loss_src_time_1:.4f} dB | SDRi = {test_loss_src_time_2:.4f} dB | Speed = ({on_test_end - on_test_start:.2f}s/{test_num_batch:d})")

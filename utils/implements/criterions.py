@@ -252,12 +252,12 @@ class PIT_SISNRi:
                     src_zm_x = torch.sum(input_zm * src_zm, dim=-1, keepdim=True) / (l2norm(src_zm, keepdim=True)**2 + eps) * src_zm
                 utt_loss_in = 20 * torch.log10(eps + l2norm(src_zm_x) / (l2norm(input_zm - src_zm_x) + eps))
                 loss_for_permute.append(utt_loss_est - utt_loss_in)
-            return sum(loss_for_permute)
+            return torch.tensor(loss_for_permute) 
         
-        pscore = torch.stack([_SDR_loss(p) for p in permutations(range(self.num_spks))])
-        min_perutt, _ = torch.max(pscore, dim=0)
+        pscore = torch.stack([_SDR_loss(p) for p in permutations(range(self.num_spks))],dim=0)
+        min_perutt, min_idx = torch.max(pscore.sum(-1), dim=0)
         num_utts = input_sizes.shape[0]
-        return torch.sum(min_perutt) / num_utts
+        return torch.sum(min_perutt) / num_utts, pscore[min_idx]
 
 @logger_wraps()
 @dataclass(slots=True)
@@ -286,4 +286,4 @@ class PIT_SDRi:
         min_perutt_in, _, _, _ = bss_eval_sources(targets, input)
         
         num_utts = input_sizes.shape[0]
-        return np.sum(min_perutt_out - min_perutt_in) / num_utts
+        return np.sum(min_perutt_out - min_perutt_in) / num_utts, min_perutt_out - min_perutt_in

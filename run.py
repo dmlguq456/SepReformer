@@ -15,6 +15,11 @@ parser.add_argument(
     choices=["train", "test", "test_wav"],
     default="train",
     help="This option is used to chooose the mode")
+parser.add_argument(
+    "--out_wav_dir",
+    type=str,
+    default=None,
+    help="This option is used to specficy save directory for output wav file in test_wav mode")
 args = parser.parse_args()
 
 # Call target model
