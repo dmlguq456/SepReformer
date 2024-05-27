@@ -70,9 +70,8 @@ class Engine(object):
                 tot_loss_freq[idx] += cur_loss_s_bn[idx].item() / (self.config['model']['num_spks'])
             cur_loss_s = self.PIT_SISNR_time_loss(estims=estim_src, input_sizes=input_sizes, target_attr=src)
             tot_loss_time += cur_loss_s.item() / self.config['model']['num_spks']
-            if epoch > 120: cur_loss = cur_loss_s
-            elif epoch > 100: cur_loss = 0.9 * cur_loss_s + 0.1 * sum(cur_loss_s_bn) / len(cur_loss_s_bn)
-            else: cur_loss = 0.6 * cur_loss_s + 0.4 * sum(cur_loss_s_bn) / len(cur_loss_s_bn)
+            alpha = 0.4 * 0.8**(1+(epoch-101)//5) if epoch > 100 else 0.4
+            cur_loss = (1-alpha) * cur_loss_s + alpha * sum(cur_loss_s_bn) / len(cur_loss_s_bn)
             cur_loss = cur_loss / self.config['model']['num_spks']
             cur_loss.backward()
             if self.config['engine']['clip_norm']: torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.config['engine']['clip_norm'])
@@ -111,7 +110,6 @@ class Engine(object):
         tot_loss_freq = sum(tot_loss_freq) / len(tot_loss_freq)
         return tot_loss_time / num_batch, tot_loss_freq / num_batch, num_batch
     
-    #TODO: CSV에 파일단위로 SDRi 기록 / 출력 결과 이름 받아서 저장되도록
     #TODO: .wav 저장 모드 따로 설정하기.
     @logger_wraps()
     def _test(self, dataloader, wav_dir=None):
