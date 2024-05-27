@@ -25,7 +25,8 @@ wandb:
         monitor_gym: false ### Don't change
         config:
             dataset:
-                scp_dir: "data/scp_ss_8k"
+                max_len : 32000
+                scp_dir: "data/scp_ss_8k_wsj_kt"
                 train:
                     mixture: "tr_mix.scp"
                     spk1: "tr_s1.scp"
@@ -86,9 +87,7 @@ wandb:
                         in_channels: *feature_projector_out_channels
                         num_spks: *var_model_num_spks
                     simple_fusion:
-                        in_channels: 256
                         out_channels: *feature_projector_out_channels
-                        kernel_size: 1
                     dec_stage:
                         num_spks: *var_model_num_spks
                         global_blocks:

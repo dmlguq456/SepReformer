@@ -20,6 +20,7 @@ def get_dataloaders(args, dataset_config, loader_config):
         scp_config_noise = os.path.join(dataset_config["scp_dir"], dataset_config[partition]['noise']) if 'noise' in dataset_config[partition] else None
         dynamic_mixing = dataset_config[partition]["dynamic_mixing"] if partition == 'train' else False
         dataset = MyDataset(
+            max_len = dataset_config['max_len'],
             partition = partition,
             wave_scp_srcs = scp_config_spk,
             wave_scp_mix = scp_config_mix,
@@ -64,10 +65,11 @@ def _collate(egs):
 
 @logger_wraps()
 class MyDataset(Dataset):
-    def __init__(self, partition, wave_scp_srcs, wave_scp_mix, wave_scp_noise, dynamic_mixing, speed_list=None):
+    def __init__(self, max_len, partition, wave_scp_srcs, wave_scp_mix, wave_scp_noise, dynamic_mixing, speed_list=None):
         self.partition = partition
         for wave_scp_src in wave_scp_srcs:
             if not os.path.exists(wave_scp_src): raise FileNotFoundError(f"Could not find file {wave_scp_src}")
+        self.max_len = max_len
         self.wave_dict_srcs = [util_dataset.parse_scps(wave_scp_src) for wave_scp_src in wave_scp_srcs]
         self.wave_dict_mix = util_dataset.parse_scps(wave_scp_mix)
         self.wave_dict_noise = util_dataset.parse_scps(wave_scp_noise) if wave_scp_noise else None
@@ -146,11 +148,10 @@ class MyDataset(Dataset):
             samps_src = [s[:-remains] for s in samps_src]
         
         if self.partition != "test":
-            max_len = 32000
-            if len(samps_mix) > max_len:
-                start = random.randint(0, len(samps_mix)-max_len)
-                samps_mix = samps_mix[start:start+max_len]
-                samps_src = [s[start:start+max_len] for s in samps_src]
+            if len(samps_mix) > self.max_len:
+                start = random.randint(0, len(samps_mix)-self.max_len)
+                samps_mix = samps_mix[start:start+self.max_len]
+                samps_src = [s[start:start+self.max_len] for s in samps_src]
         return samps_mix, samps_src
     
     def _direct_load(self, key):
@@ -172,11 +173,10 @@ class MyDataset(Dataset):
             samps_src = [s[:-remains] for s in samps_src]
         
         if self.partition != "test":
-            max_len = 32000
-            if len(samps_mix) > max_len:
-                start = random.randint(0,len(samps_mix)-max_len)
-                samps_mix = samps_mix[start:start+max_len]
-                samps_src = [s[start:start+max_len] for s in samps_src]
+            if len(samps_mix) > self.max_len:
+                start = random.randint(0,len(samps_mix)-self.max_len)
+                samps_mix = samps_mix[start:start+self.max_len]
+                samps_src = [s[start:start+self.max_len] for s in samps_src]
         
         return samps_mix, samps_src
     

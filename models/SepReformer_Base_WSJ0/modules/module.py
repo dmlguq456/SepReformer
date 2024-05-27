@@ -184,7 +184,7 @@ class Separator(torch.nn.Module):
         self.simple_fusion = torch.nn.ModuleList([])
         self.dec_stages = torch.nn.ModuleList([])
         for _ in range(self.num_stages):
-            self.simple_fusion.append(torch.nn.Conv1d(**simple_fusion))
+            self.simple_fusion.append(torch.nn.Conv1d(in_channels=simple_fusion['out_channels']*2,out_channels=simple_fusion['out_channels'], kernel_size=1))
             self.dec_stages.append(SepDecStage(**dec_stage))
     
     def forward(self, input: torch.Tensor):
