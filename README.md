@@ -18,6 +18,10 @@ Demo Pages: [Sample Results of speech separation by SepReformer](https://fordemo
 - torch 2.1.2
 - torchaudio 2.1.2
 - pyyaml 6.0.1
+- ptflops
+- wandb
+- mir_eval
+
 
 ### Features
 
