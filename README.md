@@ -20,6 +20,7 @@ Demo Pages: [Sample Results of speech separation by SepReformer](https://fordemo
 - pyyaml 6.0.1
 - ptflops
 - wandb
+- mir_eval
 
 
 ### Features
