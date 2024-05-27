@@ -30,7 +30,7 @@ wandb:
                     mixture: "tr_mix.scp"
                     spk1: "tr_s1.scp"
                     spk2: "tr_s2.scp"
-                    dynamic_mixing: false
+                    dynamic_mixing: true
                 valid:
                     mixture: "cv_mix.scp"
                     spk1: "cv_s1.scp"
@@ -41,6 +41,9 @@ wandb:
                     spk1: "tt_s1.scp"
                     spk2: "tt_s2.scp"
                     dynamic_mixing: false
+                speed_list: [0.95, 0.96, 0.97, 0.98, 0.99, 
+                            1.00, 1.00, 1.00, 1.00, 1.00, 
+                            1.01, 1.02, 1.03, 1.04, 1.05]
             dataloader:
                 batch_size: 2
                 pin_memory: false

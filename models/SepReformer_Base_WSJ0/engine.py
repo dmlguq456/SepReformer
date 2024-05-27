@@ -131,8 +131,8 @@ class Engine(object):
                     cur_loss_SDRi = self.PIT_SDRi_loss(estims=estim_src, mixture=mixture, input_sizes=input_sizes, target_attr=src)
                     total_loss_SDRi += cur_loss_SDRi.item() / self.config['model']['num_spks']
                     spamwriter.writerow(['utterance_' + str(idx), cur_loss_SDRi.item()/ self.config['model']['num_spks']])
-                    if self.engine_mode != "train":
-                        for i in range(2):
+                    if self.engine_mode == "test_wav":
+                        for i in range(self.config['model']['num_spks']):
                             src = torch.squeeze(estim_src[i]).cpu().data.numpy()
                             sf.write('utterance_'+str(idx)+'_'+str(i)+'.wav', 0.5*src/max(abs(src)), 8000)
                     idx += 1
@@ -146,7 +146,7 @@ class Engine(object):
         with torch.cuda.device(self.device):
             if self.wandb_run: self.wandb_run.watch(self.model, log="all")
             writer_src = SummaryWriter(os.path.join(os.path.dirname(os.path.abspath(__file__)), "log/tensorboard"))
-            if self.engine_mode == "test":
+            if "test" in self.engine_mode:
                 on_test_start = time.time()
                 test_loss_src_time_1, test_loss_src_time_2, test_num_batch = self._test(self.dataloaders['test'])
                 on_test_end = time.time()

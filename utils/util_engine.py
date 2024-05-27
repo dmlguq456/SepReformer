@@ -145,40 +145,40 @@ def model_params_mac_summary(model, input, dummy_input, metrics):
     
     # ptflpos
     if 'ptflops' in metrics:
-        MACs_ptflops, params_ptflops = get_model_complexity_info(model, (input.shape[1],)) # (num_samples,)
+        MACs_ptflops, params_ptflops = get_model_complexity_info(model, (input.shape[1],), print_per_layer_stat=False, verbose=False) # (num_samples,)
         MACs_ptflops, params_ptflops = MACs_ptflops.replace(" MMac", ""), params_ptflops.replace(" M", "")
-        logger.info(f"ptflops: MMac: {MACs_ptflops}, Params: {params_ptflops}")
+        logger.info(f"ptflops: MACs: {MACs_ptflops}, Params: {params_ptflops}")
 
     # thop
     if 'thop' in metrics:
         MACs_thop, params_thop = profile(model, inputs=(input, ), verbose=False)
         MACs_thop, params_thop = MACs_thop/1e6, params_thop/1e6
-        logger.info(f"thop: MMac: {MACs_thop}, Params: {params_thop}")
+        logger.info(f"thop: MACs: {MACs_thop} GMac, Params: {params_thop}")
     
     # torchinfo
     if 'torchinfo' in metrics:
         model_profile = summary_(model, input_size=input.size())
         MACs_torchinfo, params_torchinfo = model_profile.total_mult_adds/1e6, model_profile.total_params/1e6
-        logger.info(f"torchinfo: MMac: {MACs_torchinfo}, Params: {params_torchinfo}")
+        logger.info(f"torchinfo: MACs: {MACs_torchinfo} GMac, Params: {params_torchinfo}")
 
 
     # MEASURE PERFORMANCE
-    starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
-    repetitions = 500
-    repetitions2 = 500
-    timings = np.zeros((repetitions,1))
-    torch.set_num_threads(1)
-    with torch.no_grad():
-        for rep in range(repetitions+repetitions2):
-            if rep > repetitions:
-                starter.record()
-                _ = model(dummy_input)
-                ender.record()
-                # WAIT FOR GPU SYNC
-                torch.cuda.synchronize()
-                curr_time = starter.elapsed_time(ender)
-                timings[rep-repetitions2] = curr_time
-    logger.info(f"Timing: {timings.mean()}")
+    # starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+    # repetitions = 500
+    # repetitions2 = 500
+    # timings = np.zeros((repetitions,1))
+    # torch.set_num_threads(1)
+    # with torch.no_grad():
+    #     for rep in range(repetitions+repetitions2):
+    #         if rep > repetitions:
+    #             starter.record()
+    #             _ = model(dummy_input)
+    #             ender.record()
+    #             # WAIT FOR GPU SYNC
+    #             torch.cuda.synchronize()
+    #             curr_time = starter.elapsed_time(ender)
+    #             timings[rep-repetitions2] = curr_time
+    # logger.info(f"Timing: {timings.mean()}")
 
 
 

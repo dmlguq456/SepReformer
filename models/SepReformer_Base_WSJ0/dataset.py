@@ -13,7 +13,7 @@ from torchaudio.transforms import SpeedPerturbation
 @logger_wraps()
 def get_dataloaders(args, dataset_config, loader_config):    
     # create dataset object for each partition
-    partitions = ["test"] if args.engine_mode == "test" else ["train", "valid", "test"]
+    partitions = ["test"] if "test" in args.engine_mode  else ["train", "valid", "test"]
     dataloaders = {}
     for partition in partitions:
         scp_config_mix = os.path.join(dataset_config["scp_dir"], dataset_config[partition]['mixture'])
@@ -25,7 +25,8 @@ def get_dataloaders(args, dataset_config, loader_config):
             wave_scp_srcs = scp_config_spk,
             wave_scp_mix = scp_config_mix,
             wave_scp_noise = scp_config_noise,
-            dynamic_mixing = dynamic_mixing)
+            dynamic_mixing = dynamic_mixing,
+            speed_list = dataset_config["speed_list"])
         dataloader = DataLoader(
             dataset = dataset,
             batch_size = 1 if partition == 'test' else loader_config["batch_size"],
@@ -63,7 +64,7 @@ def _collate(egs):
 
 @logger_wraps()
 class MyDataset(Dataset):
-    def __init__(self, partition, wave_scp_srcs, wave_scp_mix, wave_scp_noise, dynamic_mixing):
+    def __init__(self, partition, wave_scp_srcs, wave_scp_mix, wave_scp_noise, dynamic_mixing, speed_list):
         self.partition = partition
         for wave_scp_src in wave_scp_srcs:
             if not os.path.exists(wave_scp_src): raise FileNotFoundError(f"Could not find file {wave_scp_src}")
@@ -72,9 +73,9 @@ class MyDataset(Dataset):
         self.wave_dict_noise = util_dataset.parse_scps(wave_scp_noise) if wave_scp_noise else None
         self.wave_keys = list(self.wave_dict_mix.keys())
         logger.info(f"Create MyDataset for {wave_scp_mix} with {len(self.wave_dict_mix)} utterances")
-        speed_list = [0.95, 0.96, 0.97, 0.98, 0.99, 
-                      1.00, 1.00, 1.00, 1.00, 1.00, 
-                      1.01, 1.02, 1.03, 1.04, 1.05]
+        # speed_list = [0.95, 0.96, 0.97, 0.98, 0.99, 
+        #               1.00, 1.00, 1.00, 1.00, 1.00, 
+        #               1.01, 1.02, 1.03, 1.04, 1.05]
         self.speed_aug = SpeedPerturbation(16000, speed_list)
         self.dynamic_mixing = dynamic_mixing
     
