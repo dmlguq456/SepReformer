@@ -8,7 +8,6 @@ from utils import util_dataset
 from utils.decorators import *
 from loguru import logger
 from torch.utils.data import Dataset, DataLoader
-from torchaudio.transforms import SpeedPerturbation
 
 @logger_wraps()
 def get_dataloaders(args, dataset_config, loader_config):    
@@ -76,6 +75,7 @@ class MyDataset(Dataset):
         logger.info(f"Create MyDataset for {wave_scp_mix} with {len(self.wave_dict_mix)} utterances")
         self.dynamic_mixing = dynamic_mixing
         if self.dynamic_mixing:
+            from torchaudio.transforms import SpeedPerturbation
             self.speed_aug = SpeedPerturbation(16000, speed_list)
     
     def __len__(self):
