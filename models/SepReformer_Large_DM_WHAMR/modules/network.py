@@ -159,13 +159,12 @@ class EGA(torch.nn.Module):
 
 
 class CLA(torch.nn.Module):
-    def __init__(self, in_channels, num_heads, dropout_rate, Layer_scale_init=1.0e-5):
+    def __init__(self, in_channels, kernel_size, dropout_rate, Layer_scale_init=1.0e-5):
         super().__init__()
-        self.num_heads = num_heads
         self.layer_norm = torch.nn.LayerNorm(in_channels)
         self.linear1 = torch.nn.Linear(in_channels, in_channels*2)
         self.GLU = torch.nn.GLU()
-        self.dw_conv_1d = torch.nn.Conv1d(in_channels, in_channels, 65, padding='same', groups=in_channels)
+        self.dw_conv_1d = torch.nn.Conv1d(in_channels, in_channels, kernel_size, padding='same', groups=in_channels)
         self.linear2 = torch.nn.Linear(in_channels, 2*in_channels)        
         self.BN = torch.nn.BatchNorm1d(2*in_channels)
         self.linear3 = torch.nn.Sequential(
@@ -213,10 +212,10 @@ class GlobalBlock(torch.nn.Module):
 
 
 class LocalBlock(torch.nn.Module):
-    def __init__(self, in_channels: int, num_clsa_heads: int, dropout_rate: float):
+    def __init__(self, in_channels: int, kernel_size: int, dropout_rate: float):
         super().__init__()
         self.block = torch.nn.ModuleDict({
-            'cla': CLA(in_channels, num_clsa_heads, dropout_rate),
+            'cla': CLA(in_channels, kernel_size, dropout_rate),
             'gcfn': GCFN(in_channels, dropout_rate)
         })
     
