@@ -87,12 +87,13 @@ class MyDataset(Dataset):
         return key in self.wave_dict_mix
     
     def _dynamic_mixing(self, key):
-        def __match_length(wav, len_data) : 
+        def __match_length(wav, len_data): 
             leftover = len(wav) - len_data
             idx = random.randint(0,leftover)
             wav = wav[idx:idx+len_data]
             return wav
         
+        samps_src_reverb = []
         samps_src = []
         src_len = []
         # dyanmic source choice        
@@ -105,23 +106,49 @@ class MyDataset(Dataset):
         
         idx1, idx2 = (0, 1) if random.random() > 0.5 else (1, 0)
         files = [self.wave_dict_srcs[idx1][key], self.wave_dict_srcs[idx2][key_random]]
+        files_reverb = [self.wave_dict_srcs[idx1+2][key], self.wave_dict_srcs[idx2+2][key_random]]
         
         # load
-        for file in files:
-            if not os.path.exists(file): raise FileNotFoundError("Input file {} do not exists!".format(file))
-            samps_tmp, _ = audio_lib.load(file, sr=8000)
+        for idx, file in enumerate(files_reverb):
+            if not os.path.exists(file):
+                raise FileNotFoundError("Input file {} do not exists!".format(file))
+            samps_tmp_reverb, _ = audio_lib.load(file, sr=8000)
+            samps_tmp, _ = audio_lib.load(files[idx], sr=8000)
             # mixing with random gains
             gain = pow(10,-random.uniform(-2.5,2.5)/20)
             # Speed Augmentation
-            samps_tmp = np.array(self.speed_aug(torch.tensor(samps_tmp))[0])
+            tmp = torch.stack([torch.tensor(samps_tmp_reverb),torch.tensor(samps_tmp)])
+            tmp = np.array(self.speed_aug(tmp)[0])
+            samps_tmp_reverb = tmp[0]
+            samps_tmp = tmp[1]
+            samps_src_reverb.append(gain*samps_tmp_reverb)
             samps_src.append(gain*samps_tmp)
             src_len.append(len(samps_tmp))
+
         
         # matching the audio length
         min_len = min(src_len)
         
-        samps_src = [__match_length(s, min_len) for s in samps_src]
-        samps_mix = sum(samps_src)
+        # add noise source dynamically
+        file_noise = self.wave_dict_noise[key]
+        samps_noise, _ = audio_lib.load(file_noise, sr=8000)
+        gain_noise = pow(10,-random.uniform(-2.5,2.5)/20)
+        samps_noise = samps_noise*gain_noise
+        samps_noise = np.array(self.speed_aug(torch.tensor(samps_noise))[0])
+        if min_len > len(samps_noise):
+            factor_cat = min_len//len(samps_noise) + 1
+            list_pad = [samps_noise for i in range(factor_cat)]
+            samps_noise = np.concatenate(list_pad, axis=0)
+
+        src_len.append(len(samps_noise))    
+        min_len = min(src_len)
+        samps_src_stack = [np.stack([samps_src_reverb[idx], samps_src[idx]],axis=-1) for idx in range(len(samps_src_reverb))]
+        samps_src_stack = [__match_length(s, min_len) for s in samps_src_stack]
+        samps_src_reverb = [s[...,0] for s in samps_src_stack]
+        samps_src = [s[...,1] for s in samps_src_stack]
+        samps_noise = __match_length(samps_noise, min_len)
+        samps_mix = sum(samps_src_reverb) + samps_noise
+            
         
         # ! truncated along to the sample Length "L"
         if len(samps_mix)%4 != 0:
@@ -134,6 +161,7 @@ class MyDataset(Dataset):
                 start = random.randint(0, len(samps_mix)-self.max_len)
                 samps_mix = samps_mix[start:start+self.max_len]
                 samps_src = [s[start:start+self.max_len] for s in samps_src]
+
         return samps_mix, samps_src
     
     def _direct_load(self, key):
@@ -149,8 +177,8 @@ class MyDataset(Dataset):
         samps_mix, _ = audio_lib.load(file, sr=8000)
         
         # Truncate samples as needed
-        if len(samps_mix) % 8 != 0:
-            remains = len(samps_mix) % 8
+        if len(samps_mix) % 4 != 0:
+            remains = len(samps_mix) % 4
             samps_mix = samps_mix[:-remains]
             samps_src = [s[:-remains] for s in samps_src]
         

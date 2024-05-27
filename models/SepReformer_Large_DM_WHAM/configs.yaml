@@ -6,9 +6,9 @@ wandb:
         group: "" ### Don't change / Ref: https://docs.wandb.ai/guides/runs/grouping
         job_type: "train" ### "data-preprocess", "train", "test", "visualize" etc...
         project: "[Project] SepReformer" ### Dont't change
-        name: &var_name "SepReformer-base-wsj" ### "Model"-"Version"-"Dataset"-"Size" | Version policy: v{Major change}_{Minor change}_{Issue change}
+        name: &var_name "SepReformer-large-dm-wham" ### "Model"-"Version"-"Dataset"-"Size" | Version policy: v{Major change}_{Minor change}_{Issue change}
         id: *var_name
-        tags: ["SepReformer", "WSJ", "Base"] ### [Model, Size, Dataset, etc...]
+        tags: ["SepReformer", "WHAM", "Large"] ### [Model, Size, Dataset, etc...]
         notes: "SepReformer final version" ### Insert schanges(plz write details !!!)
         dir: "./wandb" ### Don't change
         resume: "auto" ### Don't change
@@ -25,13 +25,14 @@ wandb:
         monitor_gym: false ### Don't change
         config:
             dataset:
-                max_len : 32000
-                scp_dir: "data/scp_ss_8k_wsj_kt"
+                max_len : 30500
+                scp_dir: "data/scp_ss_8k_wham"
                 train:
                     mixture: "tr_mix.scp"
                     spk1: "tr_s1.scp"
                     spk2: "tr_s2.scp"
-                    dynamic_mixing: false
+                    noise: "tr_n.scp"
+                    dynamic_mixing: true
                 speed_list_for_DM: [0.95, 0.96, 0.97, 0.98, 0.99, 
                             1.00, 1.00, 1.00, 1.00, 1.00, 
                             1.01, 1.02, 1.03, 1.04, 1.05]
@@ -61,7 +62,7 @@ wandb:
                 module_feature_projector:
                     num_channels: *var_model_audio_enc_out_channels 
                     in_channels: *var_model_audio_enc_out_channels
-                    out_channels: &feature_projector_out_channels 128 # F
+                    out_channels: &feature_projector_out_channels 256 # F
                     kernel_size: 1
                     bias: false
                 module_separator:
@@ -148,7 +149,7 @@ wandb:
                 dummy_len: 16000
             engine:
                 max_epoch: 200
-                gpuid: "0" ### "0"(single-gpu) or "0, 1" (multi-gpu)
+                gpuid: "2" ### "0"(single-gpu) or "0, 1" (multi-gpu)
                 mvn: false
                 clip_norm: 5
                 start_scheduling: 50

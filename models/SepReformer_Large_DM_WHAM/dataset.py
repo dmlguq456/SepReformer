@@ -87,7 +87,7 @@ class MyDataset(Dataset):
         return key in self.wave_dict_mix
     
     def _dynamic_mixing(self, key):
-        def __match_length(wav, len_data) : 
+        def __match_length(wav, len_data): 
             leftover = len(wav) - len_data
             idx = random.randint(0,leftover)
             wav = wav[idx:idx+len_data]
@@ -120,8 +120,21 @@ class MyDataset(Dataset):
         # matching the audio length
         min_len = min(src_len)
         
+        # add noise source dynamically if needed
+        file_noise = self.wave_dict_noise[key]
+        samps_noise, _ = audio_lib.load(file_noise, sr=8000)
+        gain_noise = pow(10,-random.uniform(-2.5,2.5)/20)
+        samps_noise = samps_noise*gain_noise
+        if min_len > len(samps_noise):
+            factor_cat = min_len//len(samps_noise) + 1
+            list_pad = [samps_noise for i in range(factor_cat)]
+            samps_noise = np.concatenate(list_pad, axis=0)
+        
+        src_len.append(len(samps_noise))    
+        min_len = min(src_len)
         samps_src = [__match_length(s, min_len) for s in samps_src]
-        samps_mix = sum(samps_src)
+        samps_noise = __match_length(samps_noise, min_len)
+        samps_mix = sum(samps_src) + samps_noise
         
         # ! truncated along to the sample Length "L"
         if len(samps_mix)%4 != 0:
@@ -149,8 +162,8 @@ class MyDataset(Dataset):
         samps_mix, _ = audio_lib.load(file, sr=8000)
         
         # Truncate samples as needed
-        if len(samps_mix) % 8 != 0:
-            remains = len(samps_mix) % 8
+        if len(samps_mix) % 4 != 0:
+            remains = len(samps_mix) % 4
             samps_mix = samps_mix[:-remains]
             samps_src = [s[:-remains] for s in samps_src]
         
