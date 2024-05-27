@@ -53,7 +53,7 @@ Demo Pages: [Sample Results of speech separation by SepReformer](https://fordemo
 - Evaluating with output wav files saved
     
     ```bash
-    python run.py --model SepReformer_Base_WSJ0 --engine-mode test_wav --out_wav_dir *'/your/save/directoy[optional]'*
+    python run.py --model SepReformer_Base_WSJ0 --engine-mode test_wav --out_wav_dir '/your/save/directoy[optional]'
     ```
     
 
