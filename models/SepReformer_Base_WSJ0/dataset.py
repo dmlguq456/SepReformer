@@ -17,14 +17,12 @@ def get_dataloaders(args, dataset_config, loader_config):
     for partition in partitions:
         scp_config_mix = os.path.join(dataset_config["scp_dir"], dataset_config[partition]['mixture'])
         scp_config_spk = [os.path.join(dataset_config["scp_dir"], dataset_config[partition][spk_key]) for spk_key in dataset_config[partition] if spk_key.startswith('spk')]
-        scp_config_noise = os.path.join(dataset_config["scp_dir"], dataset_config[partition]['noise']) if 'noise' in dataset_config[partition] else None
         dynamic_mixing = dataset_config[partition]["dynamic_mixing"] if partition == 'train' else False
         dataset = MyDataset(
             max_len = dataset_config['max_len'],
             partition = partition,
             wave_scp_srcs = scp_config_spk,
             wave_scp_mix = scp_config_mix,
-            wave_scp_noise = scp_config_noise,
             dynamic_mixing = dynamic_mixing,
             speed_list = dataset_config["speed_list_for_DM"])
         dataloader = DataLoader(

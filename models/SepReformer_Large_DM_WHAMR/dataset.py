@@ -166,7 +166,8 @@ class MyDataset(Dataset):
     
     def _direct_load(self, key):
         samps_src = []
-        files = [wave_dict_src[key] for wave_dict_src in self.wave_dict_srcs]    
+        files = [self.wave_dict_srcs[0][key], self.wave_dict_srcs[1][key]]
+        # files = [wave_dict_src[key] for wave_dict_src in self.wave_dict_srcs]    
         for file in files:
             if not os.path.exists(file): raise FileNotFoundError(f"Input file {file} do not exists!")
             samps_tmp, _ = audio_lib.load(file, sr=8000)

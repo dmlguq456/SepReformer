@@ -169,7 +169,10 @@ class Engine(object):
                 logger.info(f"Testing done!")
             else:
                 start_time = time.time()
-                init_loss_time, init_loss_freq = 0, 0
+                if self.start_epoch > 1:
+                    init_loss_time, init_loss_freq, valid_num_batch = self._validate(self.dataloaders['valid'])
+                else:
+                    init_loss_time, init_loss_freq = 0, 0
                 end_time = time.time()
                 logger.info(f"[INIT] Loss(time/mini-batch) \n - Epoch {self.start_epoch:2d}: Loss_t = {init_loss_time:.4f} dB | Loss_f = {init_loss_freq:.4f} dB | Speed = ({end_time-start_time:.2f}s)")
                 for epoch in range(self.start_epoch, self.config['engine']['max_epoch']):
