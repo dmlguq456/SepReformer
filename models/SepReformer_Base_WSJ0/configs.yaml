@@ -78,7 +78,7 @@ wandb:
                             dropout_rate: 0.05
                         local_blocks:
                             in_channels: *feature_projector_out_channels
-                            num_clsa_heads: 4
+                            kernel_size: 65
                             dropout_rate: 0.05
                         down_conv_layer:
                             in_channels: *feature_projector_out_channels

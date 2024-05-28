@@ -97,7 +97,7 @@ wandb:
                             dropout_rate: 0.05
                         local_blocks:
                             in_channels: *feature_projector_out_channels
-                            num_clsa_heads: 4
+                            kernel_size: 65
                             dropout_rate: 0.05
                         spk_attention:
                             in_channels: *feature_projector_out_channels
@@ -134,7 +134,7 @@ wandb:
             optimizer: ### Ref: https://pytorch.org/docs/stable/optim.html#algorithms
                 name: ["AdamW"] ### Choose a torch.optim's class(=attribute) e.g. ["Adam", "AdamW", "SGD", ...] / You can also build your optimizer :)
                 AdamW:
-                    lr: 1.0e-3
+                    lr: 2.0e-4
                     weight_decay: 1.0e-2
             scheduler: ### Ref(+ find "How to adjust learning rate"): https://pytorch.org/docs/stable/optim.html#algorithms
                 name: ["ReduceLROnPlateau", "WarmupConstantSchedule"] ### Choose a torch.optim.lr_scheduler's class(=attribute) e.g. ["StepLR", "ReduceLROnPlateau", "Custom"] / You can also build your scheduler :)
