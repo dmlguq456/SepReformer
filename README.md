@@ -4,7 +4,7 @@
 
 Official implementation from the following paper:
 
-“Separate and Reconstruct: Asymmetric Encoder-Decoder for Speech Separation”
+“Separate and Reconstruct: Asymmetric Encoder-Decoder for Speech Separation” [Paper Link(Arxiv)](https://arxiv.org/abs/2406.05983)
 
 ![Untitled](data/figure/SepReformer_Architecture.png)
 
@@ -68,3 +68,12 @@ Demo Pages: [Sample Results of speech separation by SepReformer](https://fordemo
 ### Citation
 
 If you find this repository helpful, please consider citing:
+```
+@misc{shin2024separate,
+      title={Separate and Reconstruct: Asymmetric Encoder-Decoder for Speech Separation}, 
+      author={Ui-Hyeop Shin and Sangyoun Lee and Taehan Kim and Hyung-Min Park},
+      year={2024},
+      eprint={2406.05983},
+      archivePrefix={arXiv},
+}
+```
