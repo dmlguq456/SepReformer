@@ -17,14 +17,12 @@ def get_dataloaders(args, dataset_config, loader_config):
     for partition in partitions:
         scp_config_mix = os.path.join(dataset_config["scp_dir"], dataset_config[partition]['mixture'])
         scp_config_spk = [os.path.join(dataset_config["scp_dir"], dataset_config[partition][spk_key]) for spk_key in dataset_config[partition] if spk_key.startswith('spk')]
-        scp_config_noise = os.path.join(dataset_config["scp_dir"], dataset_config[partition]['noise']) if 'noise' in dataset_config[partition] else None
         dynamic_mixing = dataset_config[partition]["dynamic_mixing"] if partition == 'train' else False
         dataset = MyDataset(
             max_len = dataset_config['max_len'],
             partition = partition,
             wave_scp_srcs = scp_config_spk,
             wave_scp_mix = scp_config_mix,
-            wave_scp_noise = scp_config_noise,
             dynamic_mixing = dynamic_mixing,
             speed_list = dataset_config["speed_list_for_DM"])
         dataloader = DataLoader(
@@ -65,14 +63,13 @@ def _collate(egs):
 
 @logger_wraps()
 class MyDataset(Dataset):
-    def __init__(self, max_len, partition, wave_scp_srcs, wave_scp_mix, wave_scp_noise, dynamic_mixing, speed_list=None):
+    def __init__(self, max_len, partition, wave_scp_srcs, wave_scp_mix, dynamic_mixing, speed_list=None):
         self.partition = partition
         for wave_scp_src in wave_scp_srcs:
             if not os.path.exists(wave_scp_src): raise FileNotFoundError(f"Could not find file {wave_scp_src}")
         self.max_len = max_len
         self.wave_dict_srcs = [util_dataset.parse_scps(wave_scp_src) for wave_scp_src in wave_scp_srcs]
         self.wave_dict_mix = util_dataset.parse_scps(wave_scp_mix)
-        self.wave_dict_noise = util_dataset.parse_scps(wave_scp_noise) if wave_scp_noise else None
         self.wave_keys = list(self.wave_dict_mix.keys())
         logger.info(f"Create MyDataset for {wave_scp_mix} with {len(self.wave_dict_mix)} utterances")
         self.dynamic_mixing = dynamic_mixing
@@ -121,24 +118,8 @@ class MyDataset(Dataset):
         min_len = min(src_len)
         
         # add noise source dynamically if needed
-        if self.wave_dict_noise:
-            file_noise = self.wave_dict_noise[key]
-            samps_noise, _ = audio_lib.load(file_noise, sr=8000)
-            gain_noise = pow(10,-random.uniform(-2.5,2.5)/20)
-            samps_noise = samps_noise*gain_noise
-            if min_len > len(samps_noise):
-                factor_cat = min_len//len(samps_noise) + 1
-                list_pad = [samps_noise for i in range(factor_cat)]
-                samps_noise = np.concatenate(list_pad, axis=0)
-            
-            src_len.append(len(samps_noise))    
-            min_len = min(src_len)
-            samps_src = [__match_length(s, min_len) for s in samps_src]
-            samps_noise = __match_length(samps_noise, min_len)
-            samps_mix = sum(samps_src) + samps_noise
-        else:
-            samps_src = [__match_length(s, min_len) for s in samps_src]
-            samps_mix = sum(samps_src)
+        samps_src = [__match_length(s, min_len) for s in samps_src]
+        samps_mix = sum(samps_src)
         
         # ! truncated along to the sample Length "L"
         if len(samps_mix)%4 != 0:
