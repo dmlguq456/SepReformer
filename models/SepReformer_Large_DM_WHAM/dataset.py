@@ -65,7 +65,7 @@ def _collate(egs):
 
 @logger_wraps()
 class MyDataset(Dataset):
-    def __init__(self, max_len, partition, wave_scp_srcs, wave_scp_mix, wave_scp_noise, dynamic_mixing, speed_list=None):
+    def __init__(self, max_len, partition, wave_scp_srcs, wave_scp_mix, wave_scp_noise=None, dynamic_mixing=False, speed_list=None):
         self.partition = partition
         for wave_scp_src in wave_scp_srcs:
             if not os.path.exists(wave_scp_src): raise FileNotFoundError(f"Could not find file {wave_scp_src}")
