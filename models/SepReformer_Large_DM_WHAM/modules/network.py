@@ -13,9 +13,7 @@ class LayerScale(torch.nn.Module):
             self.layer_scale = torch.nn.Parameter(torch.ones(1,input_size)*Layer_scale_init, requires_grad=True)
         elif dims == 3:
             self.layer_scale = torch.nn.Parameter(torch.ones(1,1,input_size)*Layer_scale_init, requires_grad=True)
-        else:
-            raise("Could you check your network, please? , You idiot??")
-    
+
     def forward(self, x):
         return x*self.layer_scale
 
