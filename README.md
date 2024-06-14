@@ -43,6 +43,7 @@ Demo Pages: [Sample Results of speech separation by SepReformer](https://fordemo
         ```bash
         python run.py --model SepReformer_Base_WSJ0 --engine-mode train
         ```
+
         
 
 ### Inference
@@ -60,6 +61,12 @@ Demo Pages: [Sample Results of speech separation by SepReformer](https://fordemo
     python run.py --model SepReformer_Base_WSJ0 --engine-mode test_wav --out_wav_dir '/your/save/directoy[optional]'
     ```
     
+
+### Training Curve
+- For SepReformer-B with WSJ-2MIX, the training and validation curve is as follows:
+![Untitled](data/figure/Training_Curve.png)
+
+
 
 ![Untitled](data/figure/Result_table.png)
 
