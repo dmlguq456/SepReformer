@@ -66,7 +66,8 @@ Demo Pages: [Sample Results of speech separation by SepReformer](https://fordemo
 - For SepReformer-B with WSJ-2MIX, the training and validation curve is as follows:
 ![Untitled](data/figure/Training_Curve.png)
 
-
+<br />
+<br />
 
 ![Untitled](data/figure/Result_table.png)
 
