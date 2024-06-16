@@ -1,3 +1,6 @@
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/separate-and-reconstruct-asymmetric-encoder/speech-separation-on-wsj0-2mix)](https://paperswithcode.com/sota/speech-separation-on-wsj0-2mix?p=separate-and-reconstruct-asymmetric-encoder)
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/separate-and-reconstruct-asymmetric-encoder/speech-separation-on-wsj0-2mix)](https://paperswithcode.com/sota/speech-separation-on-wsj0-2mix?p=separate-and-reconstruct-asymmetric-encoder)
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/separate-and-reconstruct-asymmetric-encoder/speech-separation-on-whamr)](https://paperswithcode.com/sota/speech-separation-on-whamr?p=separate-and-reconstruct-asymmetric-encoder)
 
 # SepReformer
 
