@@ -25,7 +25,7 @@ wandb:
         monitor_gym: false ### Don't change
         config:
             dataset:
-                max_len : 30500
+                max_len : 32000
                 scp_dir: "data/scp_ss_8k_whamr"
                 train:
                     mixture: "tr_mix.scp"
