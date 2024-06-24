@@ -147,9 +147,9 @@ wandb:
             check_computations:
                 dummy_len: 16000
             engine:
-                max_epoch: 200
+                max_epoch: 300
                 gpuid: "1" ### "0"(single-gpu) or "0, 1" (multi-gpu)
                 mvn: false
                 clip_norm: 5
-                start_scheduling: 50
+                start_scheduling: 100
                 test_epochs: [100, 120, 150, 170]
