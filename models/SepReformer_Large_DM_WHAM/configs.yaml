@@ -76,11 +76,11 @@ wandb:
                         global_blocks:
                             in_channels: *feature_projector_out_channels
                             num_mha_heads: 8
-                            dropout_rate: 0.05
+                            dropout_rate: 0.1
                         local_blocks:
                             in_channels: *feature_projector_out_channels
                             kernel_size: 65
-                            dropout_rate: 0.05
+                            dropout_rate: 0.1
                         down_conv_layer:
                             in_channels: *feature_projector_out_channels
                             samp_kernel_size: &var_model_samp_kernel_size 5
@@ -94,15 +94,15 @@ wandb:
                         global_blocks:
                             in_channels: *feature_projector_out_channels
                             num_mha_heads: 8
-                            dropout_rate: 0.05
+                            dropout_rate: 0.1
                         local_blocks:
                             in_channels: *feature_projector_out_channels
                             kernel_size: 65
-                            dropout_rate: 0.05
+                            dropout_rate: 0.1
                         spk_attention:
                             in_channels: *feature_projector_out_channels
                             num_mha_heads: 8
-                            dropout_rate: 0.05
+                            dropout_rate: 0.1
                 module_output_layer:
                     in_channels: *var_model_audio_enc_out_channels
                     out_channels: *feature_projector_out_channels
