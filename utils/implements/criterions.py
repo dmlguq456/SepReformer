@@ -160,7 +160,7 @@ class PIT_SISNR_mag:
                 src_zm = src - torch.mean(src, dim=-1, keepdim=True)
                 if self.scale_inv:
                     scale = torch.sum(mix_zm * src_zm, dim=-1, keepdim=True) / (l2norm(src_zm, keepdim=True)**2 + eps)
-                    src_zm = torch.clamp(scale, min=1e-4) * src_zm
+                    src_zm = torch.clamp(scale, min=1e-2) * src_zm
                 mix_zm = self.stft[idx](mix_zm.to(self.device))[0]
                 src_zm = self.stft[idx](src_zm.to(self.device))[0]
                 if self.mel_opt:
