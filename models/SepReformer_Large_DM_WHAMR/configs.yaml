@@ -155,4 +155,4 @@ wandb:
                 mvn: false
                 clip_norm: 5
                 start_scheduling: 100
-                test_epochs: [100, 120, 150, 170]
+                test_epochs: [100, 120, 150, 180, 200, 220, 240, 250, 260, 280, 290]
