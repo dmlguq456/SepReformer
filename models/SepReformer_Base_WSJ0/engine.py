@@ -206,9 +206,9 @@ class Engine(object):
                     valid_loss_best = util_engine.save_checkpoint_per_best(valid_loss_best, valid_loss_src_time, train_loss_src_time, epoch, self.model, self.main_optimizer, self.checkpoint_path, self.wandb_run)
                     # Logging to monitoring tools (Tensorboard && Wandb)
                     writer_src.add_scalars("Metrics", {
-                        'Learning Rate': self.main_optimizer.param_groups[0]['lr'],
                         'Loss_train_time': train_loss_src_time, 
                         'Loss_valid_time': valid_loss_src_time}, epoch)
+                    writer_src.add_scalars("Learning Rate", self.main_optimizer.param_groups[0]['lr'], epoch)
                     writer_src.flush()
                     if self.wandb_run: self.wandb_run.log(results)
                 logger.info(f"Training for {self.config['engine']['max_epoch']} epoches done!")
