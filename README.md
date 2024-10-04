@@ -1,5 +1,5 @@
 
-# SepReformer for speech separation
+# SepReformer for Speech Separation [NeurIPS 2024]
 
 
 This is the official implementation of “Separate and Reconstruct: Asymmetric Encoder-Decoder for Speech Separation” accepted in NeurIPS 2024 [Paper Link(Arxiv)](https://arxiv.org/abs/2406.05983)
