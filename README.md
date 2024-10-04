@@ -41,7 +41,7 @@ Demo Pages: [Sample Results of speech separation by SepReformer](https://fordemo
 
 - For training or evaluation, you need dataset and scp file
     1. Prepare dataset for speech separation (eg. WSJ0-2mix)
-    2. create scp file using data/crate_scp/*.py
+    2. create scp file using data/create_scp/*.py
 
 ### Training
 
