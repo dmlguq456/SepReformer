@@ -10,6 +10,21 @@ Official implementation from the following paper:
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/separate-and-reconstruct-asymmetric-encoder/speech-separation-on-wham)](https://paperswithcode.com/sota/speech-separation-on-wham?p=separate-and-reconstruct-asymmetric-encoder)
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/separate-and-reconstruct-asymmetric-encoder/speech-separation-on-whamr)](https://paperswithcode.com/sota/speech-separation-on-whamr?p=separate-and-reconstruct-asymmetric-encoder)
 
+
+
+
+## News
+---
+🔥 October, 2024: We have uploaded the pre-trained models of our SepReformer-B for WSJ0-2MIX in `models/SepReformer_Base_WSJ0/log/scratch_weight` folder! You can directly test the model using the inference command below.
+
+🔥 September 2024, Paper accepted at NeurIPS 2024 🎉.
+
+
+## Todo
+---
+We are planning to release the other cases especially for partially or fully overlapped, noisy-reverberant mixture with 16k of sampling rates for practical application within this year.
+
+
 ![Untitled](data/figure/SepReformer_Architecture.png)
 
 We  propose SepReformer, a novel approach to speech separation using an asymmetric encoder-decoder network named SepReformer. 
