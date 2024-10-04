@@ -34,14 +34,8 @@ Demo Pages: [Sample Results of speech separation by SepReformer](https://fordemo
 - torchaudio 2.1.2
 - pyyaml 6.0.1
 - ptflops
-- wandb
 - mir_eval
 
-
-### Features
-
-- You can log the training process by **wandb** as well as tensorboard.
-- Support **dynamic mixing (DM)** in training
 
 ### Data Preparation
 
