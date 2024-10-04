@@ -13,7 +13,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 @logger_wraps()
 class Engine(object):
-    def __init__(self, args, config, model, dataloaders, criterions, optimizers, schedulers, gpuid, device, wandb_run):
+    def __init__(self, args, config, model, dataloaders, criterions, optimizers, schedulers, gpuid, device):
         
         ''' Default setting '''
         self.engine_mode = args.engine_mode
@@ -34,15 +34,14 @@ class Engine(object):
         
         self.checkpoint_path = self.pretrain_weights_path if any(file.endswith(('.pt', '.pt', '.pkl')) for file in os.listdir(self.pretrain_weights_path)) else self.scratch_weights_path
         self.start_epoch = util_engine.load_last_checkpoint_n_get_epoch(self.checkpoint_path, self.model, self.main_optimizer, location=self.device)
-        self.wandb_run = wandb_run
         
         # Logging 
         util_engine.model_params_mac_summary(
             model=self.model, 
             input=torch.randn(1, self.config['check_computations']['dummy_len']).to(self.device), 
             dummy_input=torch.rand(1, self.config['check_computations']['dummy_len']).to(self.device), 
-            # metrics=['ptflops', 'thop', 'torchinfo']
-            metrics=['ptflops']
+            metrics=['ptflops', 'thop', 'torchinfo']
+            # metrics=['ptflops']
         )
         
         logger.info(f"Clip gradient by 2-norm {self.config['engine']['clip_norm']}")
@@ -110,7 +109,6 @@ class Engine(object):
         tot_loss_freq = sum(tot_loss_freq) / len(tot_loss_freq)
         return tot_loss_time / num_batch, tot_loss_freq / num_batch, num_batch
     
-    #TODO: .wav 저장 모드 따로 설정하기.
     @logger_wraps()
     def _test(self, dataloader, wav_dir=None):
         self.model.eval()
@@ -153,19 +151,12 @@ class Engine(object):
     @logger_wraps()
     def run(self):
         with torch.cuda.device(self.device):
-            if self.wandb_run: self.wandb_run.watch(self.model, log="all")
             writer_src = SummaryWriter(os.path.join(os.path.dirname(os.path.abspath(__file__)), "log/tensorboard"))
             if "test" in self.engine_mode:
                 on_test_start = time.time()
                 test_loss_src_time_1, test_loss_src_time_2, test_num_batch = self._test(self.dataloaders['test'], self.out_wav_dir)
                 on_test_end = time.time()
-                test_speed = (on_test_end - on_test_start) / test_num_batch
                 logger.info(f"[TEST] Loss(time/mini-batch) \n - Epoch {self.start_epoch:2d}: SISNRi = {test_loss_src_time_1:.4f} dB | SDRi = {test_loss_src_time_2:.4f} dB | Speed = ({on_test_end - on_test_start:.2f}s/{test_num_batch:d})")
-                results = {
-                        'Test SISNRi Loss': test_loss_src_time_1,
-                        'Test SDRi Loss': test_loss_src_time_2, 
-                        'Test Speed': test_speed}
-                if self.wandb_run: self.wandb_run.log(results)
                 logger.info(f"Testing done!")
             else:
                 start_time = time.time()
@@ -191,18 +182,6 @@ class Engine(object):
                         test_loss_src_time_1, test_loss_src_time_2, test_num_batch = self._test(self.dataloaders['test'])
                         on_test_end = time.time()
                         logger.info(f"[TEST] Loss(time/mini-batch) \n - Epoch {epoch:2d}: SISNRi = {test_loss_src_time_1:.4f} dB | SDRi = {test_loss_src_time_2:.4f} dB | Speed = ({on_test_end - on_test_start:.2f}s/{test_num_batch:d})")
-                    test_sisnri_loss = locals().get('test_loss_src_time_1', 0)
-                    test_sdri_loss = locals().get('test_loss_src_time_2', 0)
-                    test_speed = (on_test_end - on_test_start) / test_num_batch if 'on_test_end' in locals() and on_test_end else 0
-                    results = {
-                        'Learning Rate': self.main_optimizer.param_groups[0]['lr'],
-                        'Train Loss': train_loss_src_time, 
-                        'Train Speed': (train_end_time - train_start_time) / train_num_batch,
-                        'Valid Loss': valid_loss_src_time, 
-                        'Valid Speed': (valid_end_time - valid_start_time) / valid_num_batch,
-                        'Test SISNRi Loss': test_sisnri_loss,
-                        'Test SDRi Loss': test_sdri_loss, 
-                        'Test Speed': test_speed}
                     valid_loss_best = util_engine.save_checkpoint_per_best(valid_loss_best, valid_loss_src_time, train_loss_src_time, epoch, self.model, self.main_optimizer, self.checkpoint_path, self.wandb_run)
                     # Logging to monitoring tools (Tensorboard && Wandb)
                     writer_src.add_scalars("Metrics", {
@@ -210,5 +189,4 @@ class Engine(object):
                         'Loss_valid_time': valid_loss_src_time}, epoch)
                     writer_src.add_scalars("Learning Rate", self.main_optimizer.param_groups[0]['lr'], epoch)
                     writer_src.flush()
-                    if self.wandb_run: self.wandb_run.log(results)
                 logger.info(f"Training for {self.config['engine']['max_epoch']} epoches done!")
