@@ -1,155 +1,131 @@
-wandb:
-    login: 
-        key: "" ### Login key / Insert your wandb persionel API key!!
-    init: ### Ref: https://docs.wandb.ai/ref/python/init
-        entity: "team_lsy" ### Your wandb profile name (=id)
-        group: "" ### Don't change / Ref: https://docs.wandb.ai/guides/runs/grouping
-        job_type: "train" ### "data-preprocess", "train", "test", "visualize" etc...
-        project: "[Project] SepReformer" ### Dont't change
-        name: &var_name "SepReformer-large-dm-wsj" ### "Model"-"Version"-"Dataset"-"Size" | Version policy: v{Major change}_{Minor change}_{Issue change}
-        id: *var_name
-        tags: ["SepReformer", "WSJ", "Base"] ### [Model, Size, Dataset, etc...]
-        notes: "SepReformer final version" ### Insert schanges(plz write details !!!)
-        dir: "./wandb" ### Don't change
-        resume: "auto" ### Don't change
-        save_code: true ### Don't change
-        reinit: false ### Don't change
-        magic: null ### Don't change
-        config_exclude_keys: [] ### Don't change
-        config_include_keys: [] ### Don't change
-        anonymous: null ### Don't change
-        mode: "online" ### Don't change
-        allow_val_change: true ### Don't change
-        force: false ### Don't change
-        sync_tensorboard: false ### Don't change
-        monitor_gym: false ### Don't change
-        config:
-            dataset:
-                max_len : 30500
-                scp_dir: "data/scp_ss_8k_wsj_kt"
-                train:
-                    mixture: "tr_mix.scp"
-                    spk1: "tr_s1.scp"
-                    spk2: "tr_s2.scp"
-                    dynamic_mixing: true
-                speed_list_for_DM: [0.95, 0.96, 0.97, 0.98, 0.99, 
-                            1.00, 1.00, 1.00, 1.00, 1.00, 
-                            1.01, 1.02, 1.03, 1.04, 1.05]
-                valid:
-                    mixture: "cv_mix.scp"
-                    spk1: "cv_s1.scp"
-                    spk2: "cv_s2.scp"
-                test:
-                    mixture: "tt_mix.scp"
-                    spk1: "tt_s1.scp"
-                    spk2: "tt_s2.scp"
-            dataloader:
-                batch_size: 2
-                pin_memory: false
-                num_workers: 12
-                drop_last: false
-            model:
-                num_stages: &var_model_num_stages 4 # R
-                num_spks: &var_model_num_spks 2
-                module_audio_enc:
-                    in_channels: 1
-                    out_channels: &var_model_audio_enc_out_channels 256
-                    kernel_size: &var_model_audio_enc_kernel_size 16 # L
-                    stride: &var_model_audio_enc_stride 4 # S
-                    groups: 1
-                    bias: false
-                module_feature_projector:
-                    num_channels: *var_model_audio_enc_out_channels 
-                    in_channels: *var_model_audio_enc_out_channels
-                    out_channels: &feature_projector_out_channels 256 # F
-                    kernel_size: 1
-                    bias: false
-                module_separator:
-                    num_stages: *var_model_num_stages
-                    relative_positional_encoding:
-                        in_channels: *feature_projector_out_channels
-                        num_heads: 8
-                        maxlen: 2000
-                        embed_v: false
-                    enc_stage:
-                        global_blocks:
-                            in_channels: *feature_projector_out_channels
-                            num_mha_heads: 8
-                            dropout_rate: 0.1
-                        local_blocks:
-                            in_channels: *feature_projector_out_channels
-                            kernel_size: 65
-                            dropout_rate: 0.1
-                        down_conv_layer:
-                            in_channels: *feature_projector_out_channels
-                            samp_kernel_size: &var_model_samp_kernel_size 5
-                    spk_split_stage:
-                        in_channels: *feature_projector_out_channels
-                        num_spks: *var_model_num_spks
-                    simple_fusion:
-                        out_channels: *feature_projector_out_channels
-                    dec_stage:
-                        num_spks: *var_model_num_spks
-                        global_blocks:
-                            in_channels: *feature_projector_out_channels
-                            num_mha_heads: 8
-                            dropout_rate: 0.1
-                        local_blocks:
-                            in_channels: *feature_projector_out_channels
-                            kernel_size: 65
-                            dropout_rate: 0.1
-                        spk_attention:
-                            in_channels: *feature_projector_out_channels
-                            num_mha_heads: 8
-                            dropout_rate: 0.1
-                module_output_layer:
-                    in_channels: *var_model_audio_enc_out_channels
-                    out_channels: *feature_projector_out_channels
-                    num_spks: *var_model_num_spks
-                module_audio_dec:
-                    in_channels: *var_model_audio_enc_out_channels
-                    out_channels: 1
-                    kernel_size: *var_model_audio_enc_kernel_size
-                    stride: *var_model_audio_enc_stride
-                    bias: false
-            criterion: ### Ref: https://pytorch.org/docs/stable/nn.html#loss-functions
-                name: ["PIT_SISNR_mag", "PIT_SISNR_time", "PIT_SISNRi", "PIT_SDRi"] ### Choose a torch.nn's loss function class(=attribute) e.g. ["L1Loss", "MSELoss", "CrossEntropyLoss", ...] / You can also build your optimizer :)
-                PIT_SISNR_mag:
-                    frame_length: 512
-                    frame_shift: 128
-                    window: 'hann'
-                    num_stages: *var_model_num_stages
-                    num_spks: *var_model_num_spks
-                    scale_inv: true
-                    mel_opt: false
-                PIT_SISNR_time:
-                    num_spks: *var_model_num_spks
-                    scale_inv: true
-                PIT_SISNRi:
-                    num_spks: *var_model_num_spks
-                    scale_inv: true
-                PIT_SDRi:
-                    dump: 0
-            optimizer: ### Ref: https://pytorch.org/docs/stable/optim.html#algorithms
-                name: ["AdamW"] ### Choose a torch.optim's class(=attribute) e.g. ["Adam", "AdamW", "SGD", ...] / You can also build your optimizer :)
-                AdamW:
-                    lr: 2.0e-4
-                    weight_decay: 1.0e-2
-            scheduler: ### Ref(+ find "How to adjust learning rate"): https://pytorch.org/docs/stable/optim.html#algorithms
-                name: ["ReduceLROnPlateau", "WarmupConstantSchedule"] ### Choose a torch.optim.lr_scheduler's class(=attribute) e.g. ["StepLR", "ReduceLROnPlateau", "Custom"] / You can also build your scheduler :)
-                ReduceLROnPlateau:
-                    mode: "min"
-                    min_lr: 1.0e-10
-                    factor: 0.8
-                    patience: 2
-                WarmupConstantSchedule:
-                    warmup_steps: 1000
-            check_computations:
-                dummy_len: 16000
-            engine:
-                max_epoch: 300
-                gpuid: "1" ### "0"(single-gpu) or "0, 1" (multi-gpu)
-                mvn: false
-                clip_norm: 5
-                start_scheduling: 100
-                test_epochs: [100, 120, 150, 180, 200, 220, 240, 250, 260, 280, 290]
+config:
+    dataset:
+        max_len : 30500
+        sampling_rate: 8000
+        scp_dir: "data/scp_ss_8k_wsj_kt"
+        train:
+            mixture: "tr_mix.scp"
+            spk1: "tr_s1.scp"
+            spk2: "tr_s2.scp"
+            dynamic_mixing: true
+        speed_list_for_DM: [0.95, 0.96, 0.97, 0.98, 0.99, 
+                    1.00, 1.00, 1.00, 1.00, 1.00, 
+                    1.01, 1.02, 1.03, 1.04, 1.05]
+        valid:
+            mixture: "cv_mix.scp"
+            spk1: "cv_s1.scp"
+            spk2: "cv_s2.scp"
+        test:
+            mixture: "tt_mix.scp"
+            spk1: "tt_s1.scp"
+            spk2: "tt_s2.scp"
+    dataloader:
+        batch_size: 2
+        pin_memory: false
+        num_workers: 12
+        drop_last: false
+    model:
+        num_stages: &var_model_num_stages 4 # R
+        num_spks: &var_model_num_spks 2
+        module_audio_enc:
+            in_channels: 1
+            out_channels: &var_model_audio_enc_out_channels 256
+            kernel_size: &var_model_audio_enc_kernel_size 16 # L
+            stride: &var_model_audio_enc_stride 4 # S
+            groups: 1
+            bias: false
+        module_feature_projector:
+            num_channels: *var_model_audio_enc_out_channels 
+            in_channels: *var_model_audio_enc_out_channels
+            out_channels: &feature_projector_out_channels 256 # F
+            kernel_size: 1
+            bias: false
+        module_separator:
+            num_stages: *var_model_num_stages
+            relative_positional_encoding:
+                in_channels: *feature_projector_out_channels
+                num_heads: 8
+                maxlen: 2000
+                embed_v: false
+            enc_stage:
+                global_blocks:
+                    in_channels: *feature_projector_out_channels
+                    num_mha_heads: 8
+                    dropout_rate: 0.1
+                local_blocks:
+                    in_channels: *feature_projector_out_channels
+                    kernel_size: 65
+                    dropout_rate: 0.1
+                down_conv_layer:
+                    in_channels: *feature_projector_out_channels
+                    samp_kernel_size: &var_model_samp_kernel_size 5
+            spk_split_stage:
+                in_channels: *feature_projector_out_channels
+                num_spks: *var_model_num_spks
+            simple_fusion:
+                out_channels: *feature_projector_out_channels
+            dec_stage:
+                num_spks: *var_model_num_spks
+                global_blocks:
+                    in_channels: *feature_projector_out_channels
+                    num_mha_heads: 8
+                    dropout_rate: 0.1
+                local_blocks:
+                    in_channels: *feature_projector_out_channels
+                    kernel_size: 65
+                    dropout_rate: 0.1
+                spk_attention:
+                    in_channels: *feature_projector_out_channels
+                    num_mha_heads: 8
+                    dropout_rate: 0.1
+        module_output_layer:
+            in_channels: *var_model_audio_enc_out_channels
+            out_channels: *feature_projector_out_channels
+            num_spks: *var_model_num_spks
+        module_audio_dec:
+            in_channels: *var_model_audio_enc_out_channels
+            out_channels: 1
+            kernel_size: *var_model_audio_enc_kernel_size
+            stride: *var_model_audio_enc_stride
+            bias: false
+    criterion: ### Ref: https://pytorch.org/docs/stable/nn.html#loss-functions
+        name: ["PIT_SISNR_mag", "PIT_SISNR_time", "PIT_SISNRi", "PIT_SDRi"] ### Choose a torch.nn's loss function class(=attribute) e.g. ["L1Loss", "MSELoss", "CrossEntropyLoss", ...] / You can also build your optimizer :)
+        PIT_SISNR_mag:
+            frame_length: 512
+            frame_shift: 128
+            window: 'hann'
+            num_stages: *var_model_num_stages
+            num_spks: *var_model_num_spks
+            scale_inv: true
+            mel_opt: false
+        PIT_SISNR_time:
+            num_spks: *var_model_num_spks
+            scale_inv: true
+        PIT_SISNRi:
+            num_spks: *var_model_num_spks
+            scale_inv: true
+        PIT_SDRi:
+            dump: 0
+    optimizer: ### Ref: https://pytorch.org/docs/stable/optim.html#algorithms
+        name: ["AdamW"] ### Choose a torch.optim's class(=attribute) e.g. ["Adam", "AdamW", "SGD", ...] / You can also build your optimizer :)
+        AdamW:
+            lr: 2.0e-4
+            weight_decay: 1.0e-2
+    scheduler: ### Ref(+ find "How to adjust learning rate"): https://pytorch.org/docs/stable/optim.html#algorithms
+        name: ["ReduceLROnPlateau", "WarmupConstantSchedule"] ### Choose a torch.optim.lr_scheduler's class(=attribute) e.g. ["StepLR", "ReduceLROnPlateau", "Custom"] / You can also build your scheduler :)
+        ReduceLROnPlateau:
+            mode: "min"
+            min_lr: 1.0e-10
+            factor: 0.8
+            patience: 2
+        WarmupConstantSchedule:
+            warmup_steps: 1000
+    check_computations:
+        dummy_len: 16000
+    engine:
+        max_epoch: 200
+        gpuid: "1" ### "0"(single-gpu) or "0, 1" (multi-gpu)
+        mvn: false
+        clip_norm: 5
+        start_scheduling: 100
+        test_epochs: [100, 120, 150, 180, 200, 220, 240, 250, 260, 280, 290]

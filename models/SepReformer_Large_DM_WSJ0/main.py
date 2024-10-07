@@ -20,8 +20,7 @@ def main(args):
     yaml_dict = util_system.parse_yaml(yaml_path)
     
     # Run wandb and get configuration
-    wandb_run = util_system.wandb_setup(yaml_dict)
-    config = wandb_run.config if wandb_run else yaml_dict["wandb"]["init"]["config"] # wandb login success or fail
+    config = yaml_dict["config"] # wandb login success or fail
     
     # Call DataLoader [train / valid / test / etc...]
     dataloaders = get_dataloaders(args, config["dataset"], config["dataloader"])
@@ -41,5 +40,5 @@ def main(args):
     schedulers = util_implement.SchedulerFactory(config["scheduler"], optimizers).get_schedulers()
     
     # Call & Run Engine
-    engine = Engine(args, config, model, dataloaders, criterions, optimizers, schedulers, gpuid, device, wandb_run)
+    engine = Engine(args, config, model, dataloaders, criterions, optimizers, schedulers, gpuid, device)
     engine.run()

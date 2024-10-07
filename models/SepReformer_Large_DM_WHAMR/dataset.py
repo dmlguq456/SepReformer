@@ -21,6 +21,7 @@ def get_dataloaders(args, dataset_config, loader_config):
         dynamic_mixing = dataset_config[partition]["dynamic_mixing"] if partition == 'train' else False
         dataset = MyDataset(
             max_len = dataset_config['max_len'],
+            fs = dataset_config['sampling_rate'],
             partition = partition,
             wave_scp_srcs = scp_config_spk,
             wave_scp_mix = scp_config_mix,
@@ -65,11 +66,12 @@ def _collate(egs):
 
 @logger_wraps()
 class MyDataset(Dataset):
-    def __init__(self, max_len, partition, wave_scp_srcs, wave_scp_mix, wave_scp_noise, dynamic_mixing, speed_list=None):
+    def __init__(self, max_len, fs, partition, wave_scp_srcs, wave_scp_mix, wave_scp_noise, dynamic_mixing, speed_list=None):
         self.partition = partition
         for wave_scp_src in wave_scp_srcs:
             if not os.path.exists(wave_scp_src): raise FileNotFoundError(f"Could not find file {wave_scp_src}")
         self.max_len = max_len
+        self.fs = fs
         self.wave_dict_srcs = [util_dataset.parse_scps(wave_scp_src) for wave_scp_src in wave_scp_srcs]
         self.wave_dict_mix = util_dataset.parse_scps(wave_scp_mix)
         self.wave_dict_noise = util_dataset.parse_scps(wave_scp_noise) if wave_scp_noise else None
@@ -78,7 +80,7 @@ class MyDataset(Dataset):
         self.dynamic_mixing = dynamic_mixing
         if self.dynamic_mixing:
             from torchaudio.transforms import SpeedPerturbation
-            self.speed_aug = SpeedPerturbation(16000, speed_list)
+            self.speed_aug = SpeedPerturbation(self.fs, speed_list)
     
     def __len__(self):
         return len(self.wave_dict_mix)
@@ -112,8 +114,8 @@ class MyDataset(Dataset):
         for idx, file in enumerate(files_reverb):
             if not os.path.exists(file):
                 raise FileNotFoundError("Input file {} do not exists!".format(file))
-            samps_tmp_reverb, _ = audio_lib.load(file, sr=8000)
-            samps_tmp, _ = audio_lib.load(files[idx], sr=8000)
+            samps_tmp_reverb, _ = audio_lib.load(file, sr=self.fs)
+            samps_tmp, _ = audio_lib.load(files[idx], sr=self.fs)
             # mixing with random gains
             gain = pow(10,-random.uniform(-2.5,2.5)/20)
             # Speed Augmentation
@@ -131,7 +133,7 @@ class MyDataset(Dataset):
         
         # add noise source dynamically
         file_noise = self.wave_dict_noise[key]
-        samps_noise, _ = audio_lib.load(file_noise, sr=8000)
+        samps_noise, _ = audio_lib.load(file_noise, sr=self.fs)
         gain_noise = pow(10,-random.uniform(-2.5,2.5)/20)
         samps_noise = samps_noise*gain_noise
         samps_noise = np.array(self.speed_aug(torch.tensor(samps_noise))[0])
@@ -170,12 +172,12 @@ class MyDataset(Dataset):
         # files = [wave_dict_src[key] for wave_dict_src in self.wave_dict_srcs]    
         for file in files:
             if not os.path.exists(file): raise FileNotFoundError(f"Input file {file} do not exists!")
-            samps_tmp, _ = audio_lib.load(file, sr=8000)
+            samps_tmp, _ = audio_lib.load(file, sr=self.fs)
             samps_src.append(samps_tmp)
         
         file = self.wave_dict_mix[key]    
         if not os.path.exists(file): raise FileNotFoundError(f"Input file {file} do not exists!")
-        samps_mix, _ = audio_lib.load(file, sr=8000)
+        samps_mix, _ = audio_lib.load(file, sr=self.fs)
         
         # Truncate samples as needed
         if len(samps_mix) % 4 != 0:

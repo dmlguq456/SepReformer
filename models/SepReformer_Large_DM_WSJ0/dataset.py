@@ -20,6 +20,7 @@ def get_dataloaders(args, dataset_config, loader_config):
         dynamic_mixing = dataset_config[partition]["dynamic_mixing"] if partition == 'train' else False
         dataset = MyDataset(
             max_len = dataset_config['max_len'],
+            fs = dataset_config['sampling_rate'],
             partition = partition,
             wave_scp_srcs = scp_config_spk,
             wave_scp_mix = scp_config_mix,
@@ -63,11 +64,12 @@ def _collate(egs):
 
 @logger_wraps()
 class MyDataset(Dataset):
-    def __init__(self, max_len, partition, wave_scp_srcs, wave_scp_mix, dynamic_mixing, speed_list=None):
+    def __init__(self, max_len, fs, partition, wave_scp_srcs, wave_scp_mix, dynamic_mixing, speed_list=None):
         self.partition = partition
         for wave_scp_src in wave_scp_srcs:
             if not os.path.exists(wave_scp_src): raise FileNotFoundError(f"Could not find file {wave_scp_src}")
         self.max_len = max_len
+        self.fs = fs
         self.wave_dict_srcs = [util_dataset.parse_scps(wave_scp_src) for wave_scp_src in wave_scp_srcs]
         self.wave_dict_mix = util_dataset.parse_scps(wave_scp_mix)
         self.wave_keys = list(self.wave_dict_mix.keys())
@@ -75,7 +77,7 @@ class MyDataset(Dataset):
         self.dynamic_mixing = dynamic_mixing
         if self.dynamic_mixing:
             from torchaudio.transforms import SpeedPerturbation
-            self.speed_aug = SpeedPerturbation(16000, speed_list)
+            self.speed_aug = SpeedPerturbation(self.fs, speed_list)
     
     def __len__(self):
         return len(self.wave_dict_mix)
@@ -139,16 +141,16 @@ class MyDataset(Dataset):
         files = [wave_dict_src[key] for wave_dict_src in self.wave_dict_srcs]    
         for file in files:
             if not os.path.exists(file): raise FileNotFoundError(f"Input file {file} do not exists!")
-            samps_tmp, _ = audio_lib.load(file, sr=8000)
+            samps_tmp, _ = audio_lib.load(file, sr=self.fs)
             samps_src.append(samps_tmp)
         
         file = self.wave_dict_mix[key]    
         if not os.path.exists(file): raise FileNotFoundError(f"Input file {file} do not exists!")
-        samps_mix, _ = audio_lib.load(file, sr=8000)
+        samps_mix, _ = audio_lib.load(file, sr=self.fs)
         
         # Truncate samples as needed
-        if len(samps_mix) % 8 != 0:
-            remains = len(samps_mix) % 8
+        if len(samps_mix) % 4 != 0:
+            remains = len(samps_mix) % 4
             samps_mix = samps_mix[:-remains]
             samps_src = [s[:-remains] for s in samps_src]
         
