@@ -108,7 +108,7 @@ class MyDataset(Dataset):
         # load
         for file in files:
             if not os.path.exists(file): raise FileNotFoundError("Input file {} do not exists!".format(file))
-            samps_tmp, _ = audio_lib.load(file, sr=8000)
+            samps_tmp, _ = audio_lib.load(file, sr=self.fs)
             # mixing with random gains
             gain = pow(10,-random.uniform(-2.5,2.5)/20)
             # Speed Augmentation

@@ -182,11 +182,11 @@ class Engine(object):
                         test_loss_src_time_1, test_loss_src_time_2, test_num_batch = self._test(self.dataloaders['test'])
                         on_test_end = time.time()
                         logger.info(f"[TEST] Loss(time/mini-batch) \n - Epoch {epoch:2d}: SISNRi = {test_loss_src_time_1:.4f} dB | SDRi = {test_loss_src_time_2:.4f} dB | Speed = ({on_test_end - on_test_start:.2f}s/{test_num_batch:d})")
-                    valid_loss_best = util_engine.save_checkpoint_per_best(valid_loss_best, valid_loss_src_time, train_loss_src_time, epoch, self.model, self.main_optimizer, self.checkpoint_path, self.wandb_run)
+                    valid_loss_best = util_engine.save_checkpoint_per_best(valid_loss_best, valid_loss_src_time, train_loss_src_time, epoch, self.model, self.main_optimizer, self.checkpoint_path)
                     # Logging to monitoring tools (Tensorboard && Wandb)
                     writer_src.add_scalars("Metrics", {
                         'Loss_train_time': train_loss_src_time, 
                         'Loss_valid_time': valid_loss_src_time}, epoch)
-                    writer_src.add_scalars("Learning Rate", self.main_optimizer.param_groups[0]['lr'], epoch)
+                    writer_src.add_scalar("Learning Rate", self.main_optimizer.param_groups[0]['lr'], epoch)
                     writer_src.flush()
                 logger.info(f"Training for {self.config['engine']['max_epoch']} epoches done!")
