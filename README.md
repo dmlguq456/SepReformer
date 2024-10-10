@@ -25,7 +25,7 @@ We are planning to release the other cases especially for partially or fully ove
 
 We  propose SepReformer, a novel approach to speech separation using an asymmetric encoder-decoder network. 
 
-Demo Pages: [Sample Results of speech separation by SepReformer](https://fordemopage.github.io/SepReformer/)
+Demo Pages: [Sample Results of speech separation by SepReformer](https://dmlguq456.github.io/SepReformer_Demo/)
 
 ### Requirement
 
