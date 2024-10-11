@@ -97,7 +97,7 @@ class MyDataset(Dataset):
             return wav
         
         samps_src = []
-        src_len = []
+        src_len = [self.max_len]
         # dyanmic source choice        
         # checking whether it is the same speaker
         while True:
@@ -139,17 +139,11 @@ class MyDataset(Dataset):
         samps_noise = __match_length(samps_noise, min_len)
         samps_mix = sum(samps_src) + samps_noise
         
-        # ! truncated along to the sample Length "L"
         if len(samps_mix)%4 != 0:
             remains = len(samps_mix)%4
             samps_mix = samps_mix[:-remains]
             samps_src = [s[:-remains] for s in samps_src]
         
-        if self.partition != "test":
-            if len(samps_mix) > self.max_len:
-                start = random.randint(0, len(samps_mix)-self.max_len)
-                samps_mix = samps_mix[start:start+self.max_len]
-                samps_src = [s[start:start+self.max_len] for s in samps_src]
         return samps_mix, samps_src
     
     def _direct_load(self, key):
