@@ -100,12 +100,7 @@ class MyDataset(Dataset):
         src_len = [self.max_len]
         # dyanmic source choice        
         # checking whether it is the same speaker
-        while True:
-            key_random = random.choice(list(self.wave_dict_srcs[0].keys()))
-            tmp1 = key.split('_')[1][:3] != key_random.split('_')[3][:3]
-            tmp2 = key.split('_')[3][:3] != key_random.split('_')[1][:3]
-            if tmp1 and tmp2: break
-        
+        key_random = random.choice(list(self.wave_dict_srcs[0].keys()))
         idx1, idx2 = (0, 1) if random.random() > 0.5 else (1, 0)
         files = [self.wave_dict_srcs[idx1][key], self.wave_dict_srcs[idx2][key_random]]
         files_reverb = [self.wave_dict_srcs[idx1+2][key], self.wave_dict_srcs[idx2+2][key_random]]
@@ -131,19 +126,16 @@ class MyDataset(Dataset):
         # matching the audio length
         min_len = min(src_len)
         
-        # add noise source dynamically
+        # add noise source
         file_noise = self.wave_dict_noise[key]
         samps_noise, _ = audio_lib.load(file_noise, sr=self.fs)
         gain_noise = pow(10,-random.uniform(-2.5,2.5)/20)
         samps_noise = samps_noise*gain_noise
-        samps_noise = np.array(self.speed_aug(torch.tensor(samps_noise))[0])
-        if min_len > len(samps_noise):
-            factor_cat = min_len//len(samps_noise) + 1
-            list_pad = [samps_noise for i in range(factor_cat)]
-            samps_noise = np.concatenate(list_pad, axis=0)
 
         src_len.append(len(samps_noise))    
         min_len = min(src_len)
+
+        # truncate
         samps_src_stack = [np.stack([samps_src_reverb[idx], samps_src[idx]],axis=-1) for idx in range(len(samps_src_reverb))]
         samps_src_stack = [__match_length(s, min_len) for s in samps_src_stack]
         samps_src_reverb = [s[...,0] for s in samps_src_stack]
