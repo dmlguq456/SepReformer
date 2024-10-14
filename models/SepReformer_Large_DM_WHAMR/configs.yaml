@@ -11,9 +11,6 @@ config:
             spk2_reverb: "tr_s2_reverb.scp"
             noise: "tr_n.scp"
             dynamic_mixing: true
-        speed_list_for_DM: [0.95, 0.96, 0.97, 0.98, 0.99, 
-                    1.00, 1.00, 1.00, 1.00, 1.00, 
-                    1.01, 1.02, 1.03, 1.04, 1.05]
         valid:
             mixture: "cv_mix.scp"
             spk1: "cv_s1.scp"
@@ -127,7 +124,7 @@ config:
         dummy_len: 16000
     engine:
         max_epoch: 200
-        gpuid: "3" ### "0"(single-gpu) or "0, 1" (multi-gpu)
+        gpuid: "0" ### "0"(single-gpu) or "0, 1" (multi-gpu)
         mvn: false
         clip_norm: 5
         start_scheduling: 100

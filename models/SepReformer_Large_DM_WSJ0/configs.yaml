@@ -2,15 +2,12 @@ config:
     dataset:
         max_len : 30500
         sampling_rate: 8000
-        scp_dir: "data/scp_ss_8k_wsj_kt"
+        scp_dir: "data/scp_ss_8k"
         train:
             mixture: "tr_mix.scp"
             spk1: "tr_s1.scp"
             spk2: "tr_s2.scp"
             dynamic_mixing: true
-        speed_list_for_DM: [0.95, 0.96, 0.97, 0.98, 0.99, 
-                    1.00, 1.00, 1.00, 1.00, 1.00, 
-                    1.01, 1.02, 1.03, 1.04, 1.05]
         valid:
             mixture: "cv_mix.scp"
             spk1: "cv_s1.scp"

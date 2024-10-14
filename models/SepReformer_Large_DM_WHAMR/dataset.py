@@ -26,8 +26,7 @@ def get_dataloaders(args, dataset_config, loader_config):
             wave_scp_srcs = scp_config_spk,
             wave_scp_mix = scp_config_mix,
             wave_scp_noise = scp_config_noise,
-            dynamic_mixing = dynamic_mixing,
-            speed_list = dataset_config["speed_list_for_DM"])
+            dynamic_mixing = dynamic_mixing)
         dataloader = DataLoader(
             dataset = dataset,
             batch_size = 1 if partition == 'test' else loader_config["batch_size"],
@@ -78,9 +77,6 @@ class MyDataset(Dataset):
         self.wave_keys = list(self.wave_dict_mix.keys())
         logger.info(f"Create MyDataset for {wave_scp_mix} with {len(self.wave_dict_mix)} utterances")
         self.dynamic_mixing = dynamic_mixing
-        if self.dynamic_mixing:
-            from torchaudio.transforms import SpeedPerturbation
-            self.speed_aug = SpeedPerturbation(self.fs, speed_list)
     
     def __len__(self):
         return len(self.wave_dict_mix)
