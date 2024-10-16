@@ -11,7 +11,7 @@ parser.add_argument(
     dest="model",
     help="Insert model name")
 parser.add_argument(
-    "--engine_mode",
+    "--engine-mode",
     choices=["train", "test", "test_wav"],
     default="train",
     help="This option is used to chooose the mode")
