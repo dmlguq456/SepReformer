@@ -1,23 +1,11 @@
 import os
 import torch
-import numpy as np
 from loguru import logger
-
 from torchinfo import summary as summary_
 from ptflops import get_model_complexity_info
 from thop import profile
-
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
-from sklearn.decomposition import PCA
-from sklearn.manifold import TSNE
-import seaborn as sns
 import torch
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
-from scipy.stats import zscore
-import pandas as pd
-from scipy.spatial.distance import cosine
 
 
 
@@ -89,7 +77,7 @@ def save_checkpoint_per_nth(nth, epoch, model, optimizer, train_loss, valid_loss
         # Log and save the checkpoint file using wandb
         wandb_run.save(os.path.join(checkpoint_path, f"epoch.{epoch:04}.pth"))
 
-def save_checkpoint_per_best(best, valid_loss, train_loss, epoch, model, optimizer, checkpoint_path, wandb_run):
+def save_checkpoint_per_best(best, valid_loss, train_loss, epoch, model, optimizer, checkpoint_path):
     """
     Save the state of the model and optimizer every nth epoch to a checkpoint file.
     Additionally, log and save the checkpoint file using wandb.

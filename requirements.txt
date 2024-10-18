@@ -1,0 +1,11 @@
+python==3.10
+torch==2.1.2
+torchaudio==2.1.2
+tensorboard
+pyyaml==6.0.1
+ptflops
+thop
+torchinfo
+mir_eval
+librosa
+loguru
