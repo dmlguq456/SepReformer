@@ -134,7 +134,7 @@ class Engine(object):
                     total_loss_SDRi += cur_loss_SDRi.item() / self.config['model']['num_spks']
                     writer_sisnr.writerow([key[0][:-4]] + [cur_loss_SISNRi_src[i].item() for i in range(self.config['model']['num_spks'])])
                     writer_sdr.writerow([key[0][:-4]] + [cur_loss_SDRi_src[i].item() for i in range(self.config['model']['num_spks'])])
-                    if self.engine_mode == "test_wav":
+                    if self.engine_mode == "test_save":
                         if wav_dir == None: wav_dir = os.path.join(os.path.dirname(__file__),"wav_out")
                         if wav_dir and not os.path.exists(wav_dir): os.makedirs(wav_dir)
                         mixture = torch.squeeze(mixture).cpu().data.numpy()
