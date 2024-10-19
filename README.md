@@ -12,6 +12,9 @@ This is the official implementation of “Separate and Reconstruct: Asymmetric E
 
 
 ## News
+
+🔥 October, 2024: We have added feature for single audio inference on our SepReformer-B for WSJ0-2MIX in `models/SepReformer_Base_WSJ0`. You can directly inference by your own samples!
+
 🔥 October, 2024: We have uploaded the pre-trained models of our SepReformer-B for WSJ0-2MIX in `models/SepReformer_Base_WSJ0/log/scratch_weight` folder! You can directly test the model using the inference command below.
 
 🔥 September 2024, Paper accepted at NeurIPS 2024 🎉.
