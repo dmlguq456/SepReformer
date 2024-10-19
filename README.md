@@ -64,7 +64,7 @@ Demo Pages: [Sample Results of speech separation by SepReformer](https://dmlguq4
     python run.py --model SepReformer_Base_WSJ0 --engine-mode infer_sample --sample-file /to/your/sample/dir/
     ```
 
-For example, you can directly test by using the included sample as
+- For example, you can directly test by using the included sample as
 
     ```bash
     python run.py --model SepReformer_Base_WSJ0 --engine-mode infer_sample --sample-file ./sample_wav/sample.wav
