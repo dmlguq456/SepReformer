@@ -41,4 +41,7 @@ def main(args):
     
     # Call & Run Engine
     engine = Engine(args, config, model, dataloaders, criterions, optimizers, schedulers, gpuid, device)
-    engine.run()
+    if args.engine_mode == 'infer_sample':
+        engine._inference_sample(args.sample_file)
+    else:
+        engine.run()

@@ -12,11 +12,16 @@ parser.add_argument(
     help="Insert model name")
 parser.add_argument(
     "--engine-mode",
-    choices=["train", "test", "test_save"],
+    choices=["train", "test", "test_save", "infer_sample"],
     default="train",
     help="This option is used to chooose the mode")
 parser.add_argument(
-    "--out_wav_dir",
+    "--sample-file",
+    type=str,
+    default=None,
+    help="directoy for sample audio")
+parser.add_argument(
+    "--out-wav-dir",
     type=str,
     default=None,
     help="This option is used to specficy save directory for output wav file in test_wav mode")

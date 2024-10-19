@@ -53,18 +53,31 @@ Demo Pages: [Sample Results of speech separation by SepReformer](https://dmlguq4
         python run.py --model SepReformer_Base_WSJ0 --engine-mode train
         ```
 
-        
+### Inference on a single audio sample
 
-### Inference
+- Simply Inference on a single audio with output wav files saved
 
-- Simply evaluating a model without saving output as audio files
+    ```bash
+    python run.py --model SepReformer_Base_WSJ0 --engine-mode infer_sample --sample-file /to/your/sample/dir/
+    ```
+
+For example, you can directly test by using the included sample as
+
+    ```bash
+    python run.py --model SepReformer_Base_WSJ0 --engine-mode infer_sample --sample-file ./sample_wav/sample.wav
+    ```
+
+
+### Test on Dataset
+
+- Evaluating a model on dataset without saving output as audio files
     
     ```bash
     python run.py --model SepReformer_Base_WSJ0 --engine-mode test
     ```
     
 
-- Evaluating with output wav files saved
+- Evaluating on dataset with output wav files saved
     
     ```bash
     python run.py --model SepReformer_Base_WSJ0 --engine-mode test_wav --out_wav_dir '/your/save/directoy[optional]'
