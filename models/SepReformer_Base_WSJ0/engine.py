@@ -159,6 +159,8 @@ class Engine(object):
         if remains != 0:
             padding = self.stride - remains
             mixture_padded = torch.nn.functional.pad(mixture, (0, padding), "constant", 0)
+        else:
+            mixture_padded = mixture
 
         with torch.inference_mode():
             nnet_input = mixture_padded.to(self.device)
