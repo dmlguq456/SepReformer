@@ -30,7 +30,8 @@ We  propose SepReformer, a novel approach to speech separation using an asymmetr
 
 Demo Pages: [Sample Results of speech separation by SepReformer](https://dmlguq456.github.io/SepReformer_Demo/)
 
-### Requirement
+
+## Requirement
 
 - python 3.10
 - torch 2.1.2
@@ -40,13 +41,37 @@ Demo Pages: [Sample Results of speech separation by SepReformer](https://dmlguq4
 - mir_eval
 
 
-### Data Preparation
+## Pretrained Models
+
+We offer a pretrained model for our SepReformer-B. (other models will be uploaded, soon)
+
+This repository uses **Git LFS (Large File Storage)** to manage pretrained model files. If Git LFS is not installed, large files may not be downloaded properly. **Please install Git LFS before cloning this repository.**
+
+- Installing and Setting Up Git LFS
+
+1. **Install Git LFS**
+
+   Git LFS is an extension for Git that allows handling large files. You can install it, for example in Ubuntu, with the following commands:
+
+     ```bash
+     sudo apt update
+     sudo apt install git-lfs
+     ```
+2. **Initialize Git LFS**
+
+   Before cloning the repository, initialize Git LFS with the following command:
+
+   ```bash
+   git lfs install
+   ```   
+
+## Data Preparation
 
 - For training or evaluation, you need dataset and scp file
     1. Prepare dataset for speech separation (eg. WSJ0-2mix)
     2. create scp file using data/create_scp/*.py
 
-### Training
+## Training
 
 - If you want to train the network, you can simply trying by
     - set the scp file in ‘models/SepReformer_Base_WSJ0/configs.yaml’
@@ -71,7 +96,7 @@ Demo Pages: [Sample Results of speech separation by SepReformer](https://dmlguq4
     ```
 
 
-### Test on Dataset
+## Test on Dataset
 
 - Evaluating a model on dataset without saving output as audio files
     
@@ -87,7 +112,7 @@ Demo Pages: [Sample Results of speech separation by SepReformer](https://dmlguq4
     ```
     
 
-### Training Curve
+## Training Curve
 - For SepReformer-B with WSJ-2MIX, the training and validation curve is as follows:
 ![Untitled](data/figure/Training_Curve.png)
 
@@ -98,7 +123,7 @@ Demo Pages: [Sample Results of speech separation by SepReformer](https://dmlguq4
 
 ![Untitled](data/figure/SISNRvsMACs.png)
 
-### Citation
+## Citation
 
 If you find this repository helpful, please consider citing:
 ```
