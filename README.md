@@ -127,11 +127,12 @@ This repository uses **Git LFS (Large File Storage)** to manage pretrained model
 
 If you find this repository helpful, please consider citing:
 ```
-@misc{shin2024separate,
-      title={Separate and Reconstruct: Asymmetric Encoder-Decoder for Speech Separation}, 
-      author={Ui-Hyeop Shin and Sangyoun Lee and Taehan Kim and Hyung-Min Park},
-      year={2024},
-      eprint={2406.05983},
-      archivePrefix={arXiv},
+@inproceedings{
+shin2024separate,
+title={Separate and Reconstruct: Asymmetric Encoder-Decoder for Speech Separation},
+author={Ui-Hyeop Shin and Sangyoun Lee and Taehan Kim and Hyung-Min Park},
+booktitle={The Thirty-eighth Annual Conference on Neural Information Processing Systems},
+year={2024},
+url={https://openreview.net/forum?id=99y2EfLe3B}
 }
 ```
