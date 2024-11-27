@@ -31,14 +31,12 @@ We  propose SepReformer, a novel approach to speech separation using an asymmetr
 Demo Pages: [Sample Results of speech separation by SepReformer](https://dmlguq456.github.io/SepReformer_Demo/)
 
 
-## Requirement
-
-- python 3.10
-- torch 2.1.2
-- torchaudio 2.1.2
-- pyyaml 6.0.1
-- ptflops
-- mir_eval
+## Environment Preparation
+```bash
+conda create -n SepReformer python=3.10
+conda activate SepReformer
+pip install -r requirements.txt
+```
 
 
 ## Pretrained Models
