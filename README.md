@@ -92,7 +92,7 @@ This repository uses **Git LFS (Large File Storage)** to manage pretrained model
 - For example, you can directly test by using the included sample as
 
     ```bash
-    python run.py --model SepReformer_Base_WSJ0 --engine-mode infer_sample --sample-file ./sample_wav/sample.wav
+    python run.py --model SepReformer_Base_WSJ0 --engine-mode infer_sample --sample-file ./sample_wav/sample_WSJ.wav
     ```
 
 
