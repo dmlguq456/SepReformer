@@ -18,7 +18,7 @@ config:
             spk1: "tt_s1.scp"
             spk2: "tt_s2.scp"
     dataloader:
-        batch_size: 2
+        batch_size: 1
         pin_memory: false
         num_workers: 12
         drop_last: false
@@ -115,15 +115,15 @@ config:
             mode: "min"
             min_lr: 1.0e-10
             factor: 0.8
-            patience: 2
+            patience: 3
         WarmupConstantSchedule:
             warmup_steps: 1000
     check_computations:
         dummy_len: 16000
     engine:
         max_epoch: 200
-        gpuid: "0" ### "0"(single-gpu) or "0, 1" (multi-gpu)
+        gpuid: "1" ### "0"(single-gpu) or "0, 1" (multi-gpu)
         mvn: false
         clip_norm: 5
-        start_scheduling: 100
-        test_epochs: [100, 120, 150, 180, 200, 220, 240, 250, 260, 280, 290]
+        start_scheduling: 50
+        test_epochs: [50, 80, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 199]

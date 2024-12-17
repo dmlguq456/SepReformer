@@ -110,10 +110,10 @@ class MyDataset(Dataset):
             # mixing with random gains
             gain = pow(10,-random.uniform(-2.5,2.5)/20)
             # Speed Augmentation
-            tmp = torch.stack([torch.tensor(samps_tmp_reverb),torch.tensor(samps_tmp)])
-            tmp = np.array(self.speed_aug(tmp)[0])
-            samps_tmp_reverb = tmp[0]
-            samps_tmp = tmp[1]
+            # tmp = torch.stack([torch.tensor(samps_tmp_reverb),torch.tensor(samps_tmp)])
+            # tmp = np.array(self.speed_aug(tmp)[0])
+            # samps_tmp_reverb = tmp[0]
+            # samps_tmp = tmp[1]
             samps_src_reverb.append(gain*samps_tmp_reverb)
             samps_src.append(gain*samps_tmp)
             src_len.append(len(samps_tmp))

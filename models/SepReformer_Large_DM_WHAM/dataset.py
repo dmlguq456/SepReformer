@@ -107,8 +107,7 @@ class MyDataset(Dataset):
             samps_tmp, _ = audio_lib.load(file, sr=self.fs)
             # mixing with random gains
             gain = pow(10,-random.uniform(-2.5,2.5)/20)
-            # Speed Augmentation
-            samps_tmp = np.array(self.speed_aug(torch.tensor(samps_tmp))[0])
+            samps_tmp = np.array(torch.tensor(samps_tmp))
             samps_src.append(gain*samps_tmp)
             src_len.append(len(samps_tmp))
         
