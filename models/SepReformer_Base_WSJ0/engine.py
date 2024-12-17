@@ -153,7 +153,7 @@ class Engine(object):
         self.model.eval()
         self.fs = self.config["dataset"]["sampling_rate"]
         mixture, _ = librosa.load(sample,sr=self.fs)
-        mixture = torch.tensor(mixture)[None]
+        mixture = torch.tensor(mixture, dtype=torch.float32)[None]
         self.stride = self.config["model"]["module_audio_enc"]["stride"]
         remains = mixture.shape[-1] % self.stride
         if remains != 0:
@@ -165,7 +165,7 @@ class Engine(object):
         with torch.inference_mode():
             nnet_input = mixture_padded.to(self.device)
             estim_src, _ = torch.nn.parallel.data_parallel(self.model, nnet_input, device_ids=self.gpuid)
-            mixture = torch.squeeze(mixture).cpu().data.numpy()
+            mixture = torch.squeeze(mixture).cpu().numpy()
             sf.write(sample[:-4]+'_in.wav', 0.9*mixture/max(abs(mixture)), self.fs)
             for i in range(self.config['model']['num_spks']):
                 src = torch.squeeze(estim_src[i][...,:mixture.shape[-1]]).cpu().data.numpy()
