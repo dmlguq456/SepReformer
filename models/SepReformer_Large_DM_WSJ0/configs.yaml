@@ -17,7 +17,7 @@ config:
             spk1: "tt_s1.scp"
             spk2: "tt_s2.scp"
     dataloader:
-        batch_size: 1
+        batch_size: 2
         pin_memory: false
         num_workers: 12
         drop_last: false
