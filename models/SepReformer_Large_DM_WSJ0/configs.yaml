@@ -1,6 +1,6 @@
 config:
     dataset:
-        max_len : 30500
+        max_len : 32000
         sampling_rate: 8000
         scp_dir: "data/scp_ss_8k"
         train:
