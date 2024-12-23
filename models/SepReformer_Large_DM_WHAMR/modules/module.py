@@ -178,10 +178,7 @@ class Separator(torch.nn.Module):
             self.enc_stages.append(SepEncStage(**enc_stage, down_conv=True))
         
         self.bottleneck_G = SepEncStage(**enc_stage, down_conv=False)
-
-        self.spk_split_blocks = torch.nn.ModuleList([])
-        for _ in range(self.num_stages+1):
-            self.spk_split_blocks.append(SpkSplitStage(**spk_split_stage))
+        self.spk_split_block = SpkSplitStage(**spk_split_stage)
         
         # Temporal Expanding Part
         self.simple_fusion = torch.nn.ModuleList([])
@@ -202,10 +199,10 @@ class Separator(torch.nn.Module):
         skip = []
         for idx in range(self.num_stages):
             x, skip_ = self.enc_stages[idx](x, pos_k)
-            skip_ = self.spk_split_blocks[idx](skip_)
+            skip_ = self.spk_split_block(skip_)
             skip.append(skip_)
         x, _ = self.bottleneck_G(x, pos_k)
-        x = self.spk_split_blocks[-1](x) # B, 2F, T
+        x = self.spk_split_block(x) # B, 2F, T
         
         each_stage_outputs = []
         # Temporal Expanding Part
