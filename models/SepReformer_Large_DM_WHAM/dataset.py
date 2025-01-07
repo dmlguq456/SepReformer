@@ -31,7 +31,7 @@ def get_dataloaders(args, dataset_config, loader_config):
         dataloader = DataLoader(
             dataset = dataset,
             batch_size = 1 if partition == 'test' else loader_config["batch_size"],
-            shuffle = True, # only train: (partition == 'train') / all: True
+            shuffle = False if partition == 'test' else True, # only train: (partition == 'train') / all: True
             pin_memory = loader_config["pin_memory"],
             num_workers = loader_config["num_workers"],
             drop_last = loader_config["drop_last"],
@@ -85,6 +85,7 @@ class MyDataset(Dataset):
     def __contains__(self, key):
         return key in self.wave_dict_mix
     
+
     def _dynamic_mixing(self, key):
         def __match_length(wav, len_data) : 
             leftover = len(wav) - len_data
@@ -102,11 +103,18 @@ class MyDataset(Dataset):
         files = [self.wave_dict_srcs[idx1][key], self.wave_dict_srcs[idx2][key_random]]
         
         # load
-        for file in files:
+        for idx, file in enumerate(files):
             if not os.path.exists(file): raise FileNotFoundError("Input file {} do not exists!".format(file))
             samps_tmp, _ = audio_lib.load(file, sr=self.fs)
+
+            if idx == 0: ref_rms = np.sqrt(np.mean(np.square(samps_tmp)))
+            curr_rms = np.sqrt(np.mean(np.square(samps_tmp)))
+
+            norm_factor = ref_rms / curr_rms
+            samps_tmp *= norm_factor  # RMS 정규화
+            
             # mixing with random gains
-            gain = pow(10,-random.uniform(-2.5,2.5)/20)
+            gain = pow(10,-random.uniform(-5,5)/20)
             samps_tmp = np.array(torch.tensor(samps_tmp))
             samps_src.append(gain*samps_tmp)
             src_len.append(len(samps_tmp))
@@ -117,7 +125,10 @@ class MyDataset(Dataset):
         # add noise source
         file_noise = self.wave_dict_noise[key]
         samps_noise, _ = audio_lib.load(file_noise, sr=self.fs)
-        gain_noise = pow(10,-random.uniform(-2.5,2.5)/20)
+        curr_rms = np.sqrt(np.mean(np.square(samps_noise)))
+        norm_factor = ref_rms / curr_rms
+        samps_noise *= norm_factor
+        gain_noise = pow(10,-random.uniform(-5,5)/20)
         samps_noise = samps_noise*gain_noise
         src_len.append(len(samps_noise))    
 
@@ -145,7 +156,6 @@ class MyDataset(Dataset):
         file = self.wave_dict_mix[key]    
         if not os.path.exists(file): raise FileNotFoundError(f"Input file {file} do not exists!")
         samps_mix, _ = audio_lib.load(file, sr=self.fs)
-        
         # Truncate samples as needed
         if len(samps_mix) % 4 != 0:
             remains = len(samps_mix) % 4

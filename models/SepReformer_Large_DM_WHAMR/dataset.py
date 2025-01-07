@@ -108,12 +108,16 @@ class MyDataset(Dataset):
             samps_tmp_reverb, _ = audio_lib.load(file, sr=self.fs)
             samps_tmp, _ = audio_lib.load(files[idx], sr=self.fs)
             # mixing with random gains
-            gain = pow(10,-random.uniform(-2.5,2.5)/20)
+
+            if idx == 0: ref_rms = np.sqrt(np.mean(np.square(samps_tmp)))
+            curr_rms = np.sqrt(np.mean(np.square(samps_tmp)))
+
+            norm_factor = ref_rms / curr_rms
+            samps_tmp *= norm_factor
+            samps_tmp_reverb *= norm_factor
+
+            gain = pow(10,-random.uniform(-5,5)/20)
             # Speed Augmentation
-            # tmp = torch.stack([torch.tensor(samps_tmp_reverb),torch.tensor(samps_tmp)])
-            # tmp = np.array(self.speed_aug(tmp)[0])
-            # samps_tmp_reverb = tmp[0]
-            # samps_tmp = tmp[1]
             samps_src_reverb.append(gain*samps_tmp_reverb)
             samps_src.append(gain*samps_tmp)
             src_len.append(len(samps_tmp))
@@ -125,13 +129,15 @@ class MyDataset(Dataset):
         # add noise source
         file_noise = self.wave_dict_noise[key]
         samps_noise, _ = audio_lib.load(file_noise, sr=self.fs)
-        gain_noise = pow(10,-random.uniform(-2.5,2.5)/20)
+        curr_rms = np.sqrt(np.mean(np.square(samps_noise)))
+        norm_factor = ref_rms / curr_rms
+        samps_noise *= norm_factor
+        gain_noise = pow(10,-random.uniform(-5,5)/20)
         samps_noise = samps_noise*gain_noise
-
         src_len.append(len(samps_noise))    
-        min_len = min(src_len)
 
         # truncate
+        min_len = min(src_len)
         samps_src_stack = [np.stack([samps_src_reverb[idx], samps_src[idx]],axis=-1) for idx in range(len(samps_src_reverb))]
         samps_src_stack = [__match_length(s, min_len) for s in samps_src_stack]
         samps_src_reverb = [s[...,0] for s in samps_src_stack]
