@@ -111,7 +111,7 @@ class MyDataset(Dataset):
             curr_rms = np.sqrt(np.mean(np.square(samps_tmp)))
 
             norm_factor = ref_rms / curr_rms
-            samps_tmp *= norm_factor  # RMS 정규화
+            samps_tmp *= norm_factor
             
             # mixing with random gains
             gain = pow(10,-random.uniform(-5,5)/20)

@@ -116,7 +116,7 @@ class MyDataset(Dataset):
             samps_tmp *= norm_factor
             samps_tmp_reverb *= norm_factor
 
-            gain = pow(10,-random.uniform(-5,5)/20)
+            gain = pow(10,-random.uniform(-3,3)/20)
             # Speed Augmentation
             samps_src_reverb.append(gain*samps_tmp_reverb)
             samps_src.append(gain*samps_tmp)
@@ -132,7 +132,7 @@ class MyDataset(Dataset):
         curr_rms = np.sqrt(np.mean(np.square(samps_noise)))
         norm_factor = ref_rms / curr_rms
         samps_noise *= norm_factor
-        gain_noise = pow(10,-random.uniform(-5,5)/20)
+        gain_noise = pow(10,-random.uniform(-6,3)/20)
         samps_noise = samps_noise*gain_noise
         src_len.append(len(samps_noise))    
 
@@ -182,6 +182,6 @@ class MyDataset(Dataset):
     
     def __getitem__(self, index):
         key = self.wave_keys[index]
-        if any(key not in self.wave_dict_srcs[i] for i in range(len(self.wave_dict_srcs))) or key not in self.wave_dict_mix: raise KeyError(f"Could not find utterance {key}")
+        if any(key not in self.wave_dict_srcs[i] for i in range(len(self.wave_dict_srcs)-2)) or key not in self.wave_dict_mix: raise KeyError(f"Could not find utterance {key}")
         samps_mix, samps_src = self._dynamic_mixing(key) if self.dynamic_mixing else self._direct_load(key)
         return {"num_sample": samps_mix.shape[0], "mix": samps_mix, "src": samps_src, "key": key}

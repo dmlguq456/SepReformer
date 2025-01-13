@@ -102,13 +102,19 @@ class MyDataset(Dataset):
         files = [self.wave_dict_srcs[idx1][key], self.wave_dict_srcs[idx2][key_random]]
         
         # load
-        for file in files:
+        for idx, file in enumerate(files):
             if not os.path.exists(file): raise FileNotFoundError("Input file {} do not exists!".format(file))
             samps_tmp, _ = audio_lib.load(file, sr=self.fs)
+
+            if idx == 0: ref_rms = np.sqrt(np.mean(np.square(samps_tmp)))
+            curr_rms = np.sqrt(np.mean(np.square(samps_tmp)))
+
+            norm_factor = ref_rms / curr_rms
+            samps_tmp *= norm_factor
+            
             # mixing with random gains
-            gain = pow(10,-random.uniform(-2.5,2.5)/20)
-            # Speed Augmentation
-            samps_tmp = np.array(self.speed_aug(torch.tensor(samps_tmp))[0])
+            gain = pow(10,-random.uniform(-5,5)/20)
+            samps_tmp = np.array(torch.tensor(samps_tmp))
             samps_src.append(gain*samps_tmp)
             src_len.append(len(samps_tmp))
         
