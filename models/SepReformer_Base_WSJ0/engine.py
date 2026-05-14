@@ -150,13 +150,32 @@ class Engine(object):
 
     @logger_wraps()
     def _inference_sample(self, sample):
-        self.model.eval()
-        self.fs = self.config["dataset"]["sampling_rate"]
-        mixture, _ = librosa.load(sample,sr=self.fs)
-        mixture = torch.tensor(mixture, dtype=torch.float32)[None]
-        self.stride = self.config["model"]["module_audio_enc"]["stride"]
+        logger.info(f'Inference with {sample}')
+        self.fs = self.config['dataset']['sampling_rate']
+        self.stride = self.config['model']['module_audio_enc']['stride']
+        
+        # Create output directory
+        if self.out_wav_dir is None:
+            output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
+        else:
+            output_dir = self.out_wav_dir
+        
+        os.makedirs(output_dir, exist_ok=True)
+        sample_basename = os.path.basename(sample)
+        output_base = os.path.join(output_dir, os.path.splitext(sample_basename)[0])
+        
+        logger.info(f'Output files will be saved to {output_dir}')
+        
+        mixture, fs = sf.read(sample)
+        if fs != self.fs:
+            logger.warning(f'Resample from {fs} to {self.fs}')
+            mixture = librosa.resample(mixture, orig_sr=fs, target_sr=self.fs)
+            
+        mixture = torch.tensor(mixture, dtype=torch.float32).unsqueeze(0).to(self.device)
+
         remains = mixture.shape[-1] % self.stride
         if remains != 0:
+            logger.info(f"Pad {remains} samples at the end with zeros.")
             padding = self.stride - remains
             mixture_padded = torch.nn.functional.pad(mixture, (0, padding), "constant", 0)
         else:
@@ -166,10 +185,12 @@ class Engine(object):
             nnet_input = mixture_padded.to(self.device)
             estim_src, _ = torch.nn.parallel.data_parallel(self.model, nnet_input, device_ids=self.gpuid)
             mixture = torch.squeeze(mixture).cpu().numpy()
-            sf.write(sample[:-4]+'_in.wav', 0.9*mixture/max(abs(mixture)), self.fs)
+            sf.write(f'{output_base}_in.wav', 0.9*mixture/max(abs(mixture)), self.fs)
+            logger.info(f'Saved input file: {output_base}_in.wav')
             for i in range(self.config['model']['num_spks']):
                 src = torch.squeeze(estim_src[i][...,:mixture.shape[-1]]).cpu().data.numpy()
-                sf.write(sample[:-4]+'_out_'+str(i)+'.wav', 0.9*src/max(abs(src)), self.fs)
+                sf.write(f'{output_base}_out_{i}.wav', 0.9*src/max(abs(src)), self.fs)
+                logger.info(f'Saved output file {i}: {output_base}_out_{i}.wav')
 
     
     @logger_wraps()
