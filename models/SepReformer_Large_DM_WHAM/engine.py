@@ -149,10 +149,82 @@ class Engine(object):
         return total_loss_SISNRi/num_batch, total_loss_SDRi/num_batch, num_batch
     
     @logger_wraps()
+    def _infer_sample(self, sample_file):
+        """
+        Process a single audio file for inference without requiring any dataset.
+        """
+        self.model.eval()
+        logger.info(f"Processing sample file: {sample_file}")
+        
+        # Create output directory if it doesn't exist
+        wav_dir = self.out_wav_dir if self.out_wav_dir else os.path.join(os.path.dirname(os.path.abspath(__file__)), "wav_out")
+        if not os.path.exists(wav_dir):
+            os.makedirs(wav_dir)
+            
+        # Load audio file
+        try:
+            import soundfile as sf
+            import librosa
+            
+            # Load the audio file
+            logger.info(f"Loading audio file: {sample_file}")
+            audio, fs = librosa.load(sample_file, sr=self.config.get('dataset', {}).get('fs', 8000))
+            
+            # Get filename without extension for output
+            filename = os.path.splitext(os.path.basename(sample_file))[0]
+            
+            # Convert to tensor and add batch dimension
+            mixture = torch.tensor(audio).float().unsqueeze(0)
+            
+            # Apply CMVN if configured
+            if self.config['engine'].get('mvn', False):
+                from utils import functions
+                mixture = functions.apply_cmvn(mixture)
+                
+            # Process with model
+            logger.info("Running inference with model")
+            with torch.inference_mode():
+                mixture = mixture.to(self.device)
+                estim_src, _ = torch.nn.parallel.data_parallel(self.model, mixture, device_ids=self.gpuid)
+            
+            # Save mixture and separated sources
+            mixture = torch.squeeze(mixture).cpu().data.numpy()
+            sf.write(os.path.join(wav_dir, f"{filename}_mixture.wav"), 0.5*mixture/max(abs(mixture)), 
+                      self.config.get('dataset', {}).get('fs', 8000))
+            
+            # Save each separated source
+            for i in range(self.config['model']['num_spks']):
+                src = torch.squeeze(estim_src[i]).cpu().data.numpy()
+                output_file = os.path.join(wav_dir, f"{filename}_separated_{i+1}.wav")
+                sf.write(output_file, 0.5*src/max(abs(src)), 
+                         self.config.get('dataset', {}).get('fs', 8000))
+                logger.info(f"Saved separated source {i+1} to: {output_file}")
+                
+            logger.info(f"Inference completed. Files saved to: {wav_dir}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error processing sample file: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return False
+    
+    @logger_wraps()
     def run(self):
         with torch.cuda.device(self.device):
             writer_src = SummaryWriter(os.path.join(os.path.dirname(os.path.abspath(__file__)), "log/tensorboard"))
-            if "test" in self.engine_mode:
+            if self.engine_mode == "infer_sample":
+                from run import args
+                if args.sample_file:
+                    logger.info(f"Running inference on sample file: {args.sample_file}")
+                    success = self._infer_sample(args.sample_file)
+                    if success:
+                        logger.info(f"Sample inference completed successfully")
+                    else:
+                        logger.error(f"Sample inference failed")
+                else:
+                    logger.error("No sample file provided. Please specify with --sample-file")
+            elif "test" in self.engine_mode:
                 on_test_start = time.time()
                 test_loss_src_time_1, test_loss_src_time_2, test_num_batch = self._test(self.dataloaders['test'], self.out_wav_dir)
                 on_test_end = time.time()
